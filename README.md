@@ -1,0 +1,36 @@
+# Sentinel
+
+Autonomous database-reliability agent using CockroachDB as persistent memory.
+
+## CockroachDB Cloud setup
+
+1. **Connection string** — set `DATABASE_URL` in `.env` (see `.env.example`). Uses TLS (`sslmode=verify-full`).
+
+2. **Apply schema**
+   ```
+   .venv/bin/python -m infra.apply_schema
+   ```
+
+3. **Read-only SQL user** (for MCP read path)
+   ```sql
+   CREATE USER IF NOT EXISTS sentinel_read WITH PASSWORD '<password>';
+   GRANT SELECT ON TABLE knowledge, incidents, incident_events, agent_runs, tool_calls TO sentinel_read;
+   ```
+   Credentials go in `SENTINEL_READ_USER` / `SENTINEL_READ_PASSWORD` in `.env`.
+
+4. **Seed knowledge**
+   ```
+   EMBEDDINGS_BACKEND=fake .venv/bin/python -m infra.seed_runbooks
+   ```
+   Uses fake deterministic embeddings (no AWS needed). Switch `EMBEDDINGS_BACKEND=bedrock` for real Titan v2.
+
+5. **Vector recall test**
+   ```
+   DATABASE_URL=... EMBEDDINGS_BACKEND=fake .venv/bin/pytest tests/test_recall.py -v
+   ```
+   Without `DATABASE_URL`, the test skips automatically.
+
+6. **Offline tests** (no DB required)
+   ```
+   .venv/bin/pytest tests/ -v
+   ```
