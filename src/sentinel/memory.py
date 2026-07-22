@@ -8,6 +8,13 @@ def _json_safe(x):
     return json.loads(json.dumps(x, default=str))
 
 
+def _json_param(x):
+    """psycopg Json() with UUID/datetime-safe payloads."""
+    if x is None:
+        return None
+    return Json(_json_safe(x))
+
+
 ALLOWED = {
     "open": {"diagnosing"},
     "diagnosing": {"remediating"},
@@ -27,7 +34,7 @@ def open_incident(conn, *, title, severity, signal: dict, cluster_ref=None) -> d
     cur = conn.execute(
         "INSERT INTO incidents (title, severity, signal, cluster_ref) "
         "VALUES (%s, %s, %s, %s) RETURNING id, status, created_at",
-        (title, severity, Json(signal), cluster_ref),
+        (title, severity, _json_param(signal), cluster_ref),
     )
     row = cur.fetchone()
     log_event(conn, row[0], "system", "observation", {"title": title, "severity": severity})
@@ -50,11 +57,9 @@ def set_status(conn, incident_id, new_status: str, *, actor="agent", detail=None
 
 
 def log_event(conn, incident_id, actor, kind, detail: dict) -> None:
-    # root cause: skill/diagnose rows include datetime; Json() has no default=str
-    payload = _json_safe(detail) if isinstance(detail, dict) else detail
     conn.execute(
         "INSERT INTO incident_events (incident_id, actor, kind, detail) VALUES (%s, %s, %s, %s)",
-        (incident_id, actor, kind, Json(payload) if isinstance(payload, dict) else payload),
+        (incident_id, actor, kind, _json_param(detail)),
     )
 
 
@@ -84,7 +89,7 @@ def store_knowledge(conn, *, source, title, content, embedding, metadata=None) -
     cur = conn.execute(
         "INSERT INTO knowledge (source, title, content, metadata, embedding) "
         "VALUES (%s, %s, %s, %s, %s) RETURNING id",
-        (source, title, content, Json(metadata) if metadata else None, emb_str),
+        (source, title, content, _json_param(metadata), emb_str),
     )
     return str(cur.fetchone()[0])
 
@@ -124,7 +129,7 @@ def log_tool_call(conn, run_id, tool, args, result, ok, latency_ms):
         conn.execute(
             "INSERT INTO tool_calls (run_id, tool, args, result, ok, latency_ms) "
             "VALUES (%s, %s, %s, %s, %s, %s)",
-            (run_id, tool, Json(_json_safe(args)), Json(_json_safe(result)), ok, latency_ms),
+            (run_id, tool, _json_param(args), _json_param(result), ok, latency_ms),
         )
     except Exception:
         pass  # soft-fail: never break the agent loop

@@ -62,6 +62,25 @@ def test_log_event_sanitizes_datetime():
     assert detail.obj["skills"]["triaging-live-sql-activity"]["queries"][0]["rows"][0]["start"] == str(now)
 
 
+def test_store_knowledge_sanitizes_uuid_metadata():
+    from uuid import uuid4
+
+    from sentinel.memory import store_knowledge
+
+    c = _FakeConn()
+    kid = uuid4()
+    store_knowledge(
+        c,
+        source="postmortem",
+        title="t",
+        content="c",
+        embedding=[0.1] * 4,
+        metadata={"incident_id": kid},
+    )
+    meta = c.executes[-1][1][3]
+    assert meta.obj["incident_id"] == str(kid)
+
+
 def test_store_knowledge():
     from sentinel.memory import store_knowledge
     c = _FakeConn(has_approval=False)
