@@ -80,6 +80,14 @@ def test_agent_loop_end_to_end(monkeypatch):
             "summary": "PM Summary", "knowledge_id": "pm-1",
         },
     )
+    monkeypatch.setattr("sentinel.agent.start_agent_run", lambda conn, incident_id=None: "run-test-1")
+    monkeypatch.setattr("sentinel.agent.end_agent_run", lambda conn, run_id, status="done": None)
+    tool_calls_logged = []
+    monkeypatch.setattr(
+        "sentinel.memory.log_tool_call",
+        lambda conn, run_id, tool, args, result, ok, latency_ms: tool_calls_logged.append(tool),
+    )
+
     conn = _FakeConn()
     signal = {
         "title": "P99 latency spike on transaction processing",
@@ -93,6 +101,7 @@ def test_agent_loop_end_to_end(monkeypatch):
     assert result["status"] == "resolved"
     assert result["hypothesis"] is not None
     assert len(result["recalled"]) >= 1
+    assert result["run_id"] == "run-test-1"
 
     events_kinds = []
     for sql, params in conn.executes:
@@ -107,3 +116,6 @@ def test_agent_loop_end_to_end(monkeypatch):
     assert conn.hypothesis is not None
     assert conn.resolution == "PM Summary"
     assert result["knowledge_id"] == "pm-1"
+
+    assert "diagnose" in tool_calls_logged, f"diagnose not logged in {tool_calls_logged}"
+    assert "llm.plan" in tool_calls_logged, f"llm.plan not logged in {tool_calls_logged}"

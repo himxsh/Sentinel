@@ -57,7 +57,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 - [x] Agent Skills integration (curated SQL, wired into agent investigate step, 4 skills)
 - [x] Remediation Lambda (dry-run + allow-list) — local mode default; not deployed to AWS yet
 - [x] Postmortem learning loop — `store_knowledge` in `memory.py`, `postmortem(ctx)` in `llm.py`, `write_postmortem` module wired into `handle_alert` resolve path; stores embedding in `knowledge` table; S3 artifact deferred
-- [ ] `tool_calls` logging everywhere
+- [x] `tool_calls` logging wrapped via `timed_tool` helper for diagnose, control_plane, run_skills, llm.plan, remediate, write_postmortem; `start_agent_run` / `end_agent_run` in `memory.py`; soft-fail never breaks loop
 
 ## Week 3
 

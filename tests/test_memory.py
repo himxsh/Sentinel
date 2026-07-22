@@ -60,3 +60,84 @@ def test_store_knowledge():
     assert any("INSERT INTO knowledge" in s for s, _ in c.executes)
     insert_sql = next(s for s, _ in c.executes if "INSERT INTO knowledge" in s)
     assert "RETURNING id" in insert_sql
+
+
+def test_start_agent_run():
+    from sentinel.memory import start_agent_run
+    c = _FakeConn()
+    run_id = start_agent_run(c, incident_id="inc-1")
+    assert run_id == "1"
+    assert any("INSERT INTO agent_runs" in s for s, _ in c.executes)
+
+
+def test_end_agent_run():
+    from sentinel.memory import end_agent_run
+    c = _FakeConn()
+    end_agent_run(c, "run-1", status="done")
+    assert any("UPDATE agent_runs" in s for s, _ in c.executes)
+
+
+def test_log_tool_call_records_latency_and_ok():
+    from sentinel.memory import log_tool_call
+    c = _FakeConn()
+    log_tool_call(c, "run-1", "diagnose", {"signal": "test"}, {"ok": True}, True, 42)
+    inserts = [(s, p) for s, p in c.executes if "INSERT INTO tool_calls" in s]
+    assert len(inserts) == 1
+    assert inserts[0][1][0] == "run-1"
+    assert inserts[0][1][1] == "diagnose"
+    assert inserts[0][1][4] is True
+    assert inserts[0][1][5] == 42
+
+
+def test_log_tool_call_skips_when_run_id_none():
+    from sentinel.memory import log_tool_call
+    c = _FakeConn()
+    log_tool_call(c, None, "diagnose", {}, {}, True, 0)
+    assert not any("INSERT INTO tool_calls" in s for s, _ in c.executes)
+
+
+def test_timed_tool_success(monkeypatch):
+    from sentinel.memory import timed_tool, log_tool_call
+    c = _FakeConn()
+    calls = []
+    monkeypatch.setattr("sentinel.memory.log_tool_call", lambda *a: calls.append(a))
+    result = timed_tool(c, "run-1", "ping", {"input": "x"}, lambda: "pong")
+    assert result == "pong"
+    assert len(calls) == 1
+    _, run_id, tool, args, result_val, ok, latency = calls[0]
+    assert run_id == "run-1"
+    assert tool == "ping"
+    assert ok is True
+    assert result_val == "pong"
+    assert isinstance(latency, int)
+
+
+def test_timed_tool_failure(monkeypatch):
+    from sentinel.memory import timed_tool
+    c = _FakeConn()
+    calls = []
+    monkeypatch.setattr("sentinel.memory.log_tool_call", lambda *a: calls.append(a))
+    with pytest.raises(RuntimeError, match="boom"):
+        timed_tool(c, "run-1", "fail", {}, lambda: (_ for _ in ()).throw(RuntimeError("boom")))
+    assert len(calls) == 1
+    _, _, _, _, _, ok, _ = calls[0]
+    assert ok is False
+
+
+def test_timed_tool_skips_when_run_id_none(monkeypatch):
+    from sentinel.memory import timed_tool
+    c = _FakeConn()
+    calls = []
+    monkeypatch.setattr("sentinel.memory.log_tool_call", lambda *a: calls.append(a))
+    result = timed_tool(c, None, "ping", {}, lambda: "pong")
+    assert result == "pong"
+    assert len(calls) == 0
+
+
+def test_log_tool_call_sanitizes_datetime(monkeypatch):
+    from datetime import datetime, timezone
+    from sentinel.memory import log_tool_call
+    c = _FakeConn()
+    now = datetime.now(timezone.utc)
+    log_tool_call(c, "run-1", "diagnose", {"ts": now}, {"rows": [{"ts": now}]}, True, 10)
+    assert any("INSERT INTO tool_calls" in s for s, _ in c.executes)

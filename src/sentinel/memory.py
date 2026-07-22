@@ -1,4 +1,12 @@
+import json
+import time
+
 from psycopg.types.json import Json
+
+
+def _json_safe(x):
+    return json.loads(json.dumps(x, default=str))
+
 
 ALLOWED = {
     "open": {"diagnosing"},
@@ -90,3 +98,44 @@ def vector_recall(conn, embedding: list[float], k=5) -> list[dict]:
         {"id": r[0], "source": r[1], "title": r[2], "content": r[3], "distance": r[4]}
         for r in cur.fetchall()
     ]
+
+
+def start_agent_run(conn, incident_id=None, model=None):
+    cur = conn.execute(
+        "INSERT INTO agent_runs (incident_id, model) VALUES (%s, %s) RETURNING id",
+        (incident_id, model),
+    )
+    return str(cur.fetchone()[0])
+
+
+def end_agent_run(conn, run_id, status="done"):
+    conn.execute(
+        "UPDATE agent_runs SET ended_at = now(), status = %s WHERE id = %s",
+        (status, run_id),
+    )
+
+
+def log_tool_call(conn, run_id, tool, args, result, ok, latency_ms):
+    if run_id is None:
+        return
+    try:
+        conn.execute(
+            "INSERT INTO tool_calls (run_id, tool, args, result, ok, latency_ms) "
+            "VALUES (%s, %s, %s, %s, %s, %s)",
+            (run_id, tool, Json(_json_safe(args)), Json(_json_safe(result)), ok, latency_ms),
+        )
+    except Exception:
+        pass  # soft-fail: never break the agent loop
+
+
+def timed_tool(conn, run_id, tool, args, fn):
+    if run_id is None:
+        return fn()
+    t0 = time.monotonic()
+    try:
+        result = fn()
+        log_tool_call(conn, run_id, tool, args, result, True, int((time.monotonic() - t0) * 1000))
+        return result
+    except Exception as e:
+        log_tool_call(conn, run_id, tool, args, {"error": str(e)}, False, int((time.monotonic() - t0) * 1000))
+        raise
