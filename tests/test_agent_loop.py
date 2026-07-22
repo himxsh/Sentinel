@@ -69,6 +69,10 @@ def test_agent_loop_end_to_end(monkeypatch):
         "sentinel.agent.control_plane",
         lambda signal=None: {"ok": True, "data": [{"id": "c1", "name": "test"}]},
     )
+    monkeypatch.setattr(
+        "sentinel.agent.run_skills",
+        lambda signal: {"triaging-live-sql-activity": {"queries": [{"ok": False, "error": "stub"}]}},
+    )
     conn = _FakeConn()
     signal = {
         "title": "P99 latency spike on transaction processing",

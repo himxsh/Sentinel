@@ -59,7 +59,7 @@ def _bedrock_plan(context: dict, settings) -> dict:
     )
     user_msg = {
         "role": "user",
-        "content": [{"text": f"Signal: {json.dumps(context.get('signal', {}))}\nMemories: {json.dumps(context.get('memories', []))}"}],
+        "content": [{"text": f"Signal: {json.dumps(context.get('signal', {}))}\nMemories: {json.dumps(context.get('memories', []))}\nSkills: {json.dumps(context.get('skills', {}))}"}],
     }
     resp = client.converse(
         modelId=settings.bedrock_llm_model,

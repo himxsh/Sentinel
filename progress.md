@@ -54,7 +54,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 
 - [x] `tools/ccloud.py` (allow-listed `cluster list` / `cluster info`; wired into agent as `control_plane` observation)
 - [ ] `ccloud auth login` / service-account setup — needs human (Cloud Console)
-- [ ] Agent Skills integration
+- [x] Agent Skills integration (curated SQL, wired into agent investigate step, 4 skills)
 - [ ] Remediation Lambda (dry-run + allow-list)
 - [ ] Postmortem learning loop
 - [ ] `tool_calls` logging everywhere
