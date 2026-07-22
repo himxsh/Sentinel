@@ -1,6 +1,6 @@
 # Sentinel — Progress
 
-Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `6d74af8`.
+Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `c846a2c`.
 
 ## Week 1 — Day 1 (Cockroach Cloud)
 
@@ -59,13 +59,48 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `6d74af8`.
 - [x] Postmortem learning loop — `store_knowledge` in `memory.py`, `postmortem(ctx)` in `llm.py`, `write_postmortem` module wired into `handle_alert` resolve path; stores embedding in `knowledge` table; S3 artifact deferred
 - [x] `tool_calls` logging wrapped via `timed_tool` helper for diagnose, control_plane, run_skills, llm.plan, remediate, write_postmortem; `start_agent_run` / `end_agent_run` in `memory.py`; soft-fail never breaks loop
 
-## Week 3
+## Week 3 — backend product surface
 
-- [x] FastAPI UI (feed, SSE trace, audit, approval) — `server.py` + inline HTML
+- [x] FastAPI API + interim console (`server.py` inline HTML) — feed, audit, approval, demo alert
 - [x] Lambda ingest handler (normalize → local `handle_alert` or POST to `AGENT_URL`; not deployed)
-- [ ] Deploy agent + UI (ECS Fargate / App Runner) → public demo URL
+- [ ] Deploy agent + API (ECS Fargate / App Runner) → public demo URL
 
-## Week 4
+> Interim UI at `/` is a backend stub for smoke-testing the agent. Real product frontend is the next phase.
+
+## Phase — Frontend (sitemap + build)
+
+Replaces the interim inline HTML with a proper product UI once the sitemap is locked.
+
+### Planning
+
+- [ ] Define audience + single job of the UI (on-call / demo judges watching memory + audit)
+- [ ] Sitemap / IA — routes and what each page owns (no dashboard soup)
+- [ ] Wireframes for first viewport + incident detail + approval flow
+- [ ] Visual direction — tokens (color, type, motion); brand-first hero for any landing/demo surface
+- [ ] Map UI surfaces → existing APIs (`/api/incidents`, `/api/incidents/{id}`, `/api/incidents/{id}/approve`, `/api/alerts`, `/api/incidents/{id}/stream`, `/health`)
+
+### Proposed sitemap (draft — revise before build)
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Landing / demo entry — brand + one CTA to fire or open live incident |
+| `/incidents` | Incident feed (status, severity, created) |
+| `/incidents/{id}` | Incident detail — hypothesis, resolution, live audit timeline, SSE trace |
+| `/incidents/{id}/approve` | Approval gate surface (or modal on detail) for destructive remediate |
+| `/health` (API only) | Ops check — not a product page |
+
+### Build
+
+- [ ] Choose stack (keep FastAPI static / Vite+vanilla / small React — decide in plan, fewest moving parts)
+- [ ] Implement sitemap routes against existing APIs
+- [ ] Incident feed + detail with audit timeline
+- [ ] Live agent trace (SSE or poll)
+- [ ] Approval CTA wired to `POST /api/incidents/{id}/approve`
+- [ ] Demo “fire alert” CTA wired to `POST /api/alerts`
+- [ ] Mobile-usable layout; remove dependency on interim `_HTML` in `server.py`
+- [ ] Smoke check: fire demo → timeline populates → resolve shows postmortem
+
+## Week 4 — polish + submit
 
 - [ ] Resilience / failover demo script
 - [ ] README + architecture + tool/AWS writeup
