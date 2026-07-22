@@ -23,6 +23,8 @@ class _FakeConn:
         self._has_approval = has_approval
     def execute(self, sql, params=None):
         self.executes.append((sql, params))
+        if "RETURNING id" in sql:
+            return _Cursor(_Row())
         return _Cursor(_Row() if self._has_approval and "approval" in sql else None)
     def commit(self):
         pass
@@ -46,3 +48,15 @@ def test_non_destructive_no_approval_needed():
     c = _FakeConn(has_approval=False)
     record_action(c, "inc-1", {"cmd": "describe"}, destructive=False)
     # no exception = success
+
+
+def test_store_knowledge():
+    from sentinel.memory import store_knowledge
+    c = _FakeConn(has_approval=False)
+    kid = store_knowledge(c, source="postmortem", title="Test",
+                          content="Content", embedding=[0.1, 0.2, 0.3],
+                          metadata={"incident_id": "inc-1"})
+    assert kid == "1"
+    assert any("INSERT INTO knowledge" in s for s, _ in c.executes)
+    insert_sql = next(s for s, _ in c.executes if "INSERT INTO knowledge" in s)
+    assert "RETURNING id" in insert_sql

@@ -69,6 +69,16 @@ def update_incident(conn, incident_id, **fields) -> None:
     conn.execute(f"UPDATE incidents SET {set_clause} WHERE id = %s", vals)
 
 
+def store_knowledge(conn, *, source, title, content, embedding, metadata=None) -> str:
+    emb_str = "[" + ",".join(str(x) for x in embedding) + "]"
+    cur = conn.execute(
+        "INSERT INTO knowledge (source, title, content, metadata, embedding) "
+        "VALUES (%s, %s, %s, %s, %s) RETURNING id",
+        (source, title, content, Json(metadata) if metadata else None, emb_str),
+    )
+    return str(cur.fetchone()[0])
+
+
 def vector_recall(conn, embedding: list[float], k=5) -> list[dict]:
     emb = "[" + ",".join(str(x) for x in embedding) + "]"
     cur = conn.execute(

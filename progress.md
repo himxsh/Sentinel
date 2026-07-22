@@ -56,7 +56,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 - [ ] `ccloud auth login` / service-account setup — needs human (Cloud Console)
 - [x] Agent Skills integration (curated SQL, wired into agent investigate step, 4 skills)
 - [x] Remediation Lambda (dry-run + allow-list) — local mode default; not deployed to AWS yet
-- [ ] Postmortem learning loop
+- [x] Postmortem learning loop — `store_knowledge` in `memory.py`, `postmortem(ctx)` in `llm.py`, `write_postmortem` module wired into `handle_alert` resolve path; stores embedding in `knowledge` table; S3 artifact deferred
 - [ ] `tool_calls` logging everywhere
 
 ## Week 3

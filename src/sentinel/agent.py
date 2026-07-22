@@ -8,6 +8,7 @@ from sentinel.memory import (
     update_incident,
     vector_recall,
 )
+from sentinel.postmortem import write_postmortem
 from sentinel.tools.ccloud import control_plane
 from sentinel.tools.mcp_read import diagnose
 from sentinel.tools.remediate import remediate
@@ -59,8 +60,17 @@ def handle_alert(conn, signal: dict) -> dict:
         result = remediate(action, dry_run=False, approved=False)
         record_action(conn, incident_id, {**action, "result": result}, destructive=False)
 
+    pm_context = {
+        "signal": signal,
+        "memories": memories,
+        "plan": plan,
+        "live": live,
+        "skills": skills,
+    }
+    pm_result = write_postmortem(conn, incident_id, pm_context)
+
     set_status(conn, incident_id, "resolved")
-    update_incident(conn, incident_id, resolution=plan["summary"])
+    update_incident(conn, incident_id, resolution=pm_result["summary"])
 
     return {
         "incident_id": incident_id,
@@ -68,4 +78,5 @@ def handle_alert(conn, signal: dict) -> dict:
         "hypothesis": plan["hypothesis"],
         "recalled": [m["title"] for m in memories],
         "plan": plan,
+        "knowledge_id": pm_result["knowledge_id"],
     }

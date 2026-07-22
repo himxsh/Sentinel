@@ -73,6 +73,13 @@ def test_agent_loop_end_to_end(monkeypatch):
         "sentinel.agent.run_skills",
         lambda signal: {"triaging-live-sql-activity": {"queries": [{"ok": False, "error": "stub"}]}},
     )
+    monkeypatch.setattr(
+        "sentinel.agent.write_postmortem",
+        lambda conn, incident_id, ctx: {
+            "title": "PM Title", "content": "PM Content",
+            "summary": "PM Summary", "knowledge_id": "pm-1",
+        },
+    )
     conn = _FakeConn()
     signal = {
         "title": "P99 latency spike on transaction processing",
@@ -98,4 +105,5 @@ def test_agent_loop_end_to_end(monkeypatch):
     assert "observation" in events_kinds, f"no observation event in {events_kinds}"
     assert "decision" in events_kinds, f"no decision event in {events_kinds}"
     assert conn.hypothesis is not None
-    assert conn.resolution is not None
+    assert conn.resolution == "PM Summary"
+    assert result["knowledge_id"] == "pm-1"

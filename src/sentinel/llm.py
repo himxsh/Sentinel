@@ -70,3 +70,56 @@ def _bedrock_plan(context: dict, settings) -> dict:
     text = resp["output"]["message"]["content"][0]["text"]
     text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
     return json.loads(text)
+
+
+def postmortem(context: dict) -> dict:
+    settings = get_settings()
+    if settings.llm_backend == "bedrock":
+        return _bedrock_postmortem(context, settings)
+    return _fake_postmortem(context)
+
+
+def _fake_postmortem(context: dict) -> dict:
+    signal = context.get("signal", {})
+    plan = context.get("plan", {})
+    hypothesis = context.get("hypothesis") or plan.get("hypothesis", "Unknown")
+    summary = context.get("summary") or plan.get("summary", "No summary")
+    title = f"Postmortem: {signal.get('title', 'Incident')}"
+
+    content = (
+        f"Incident: {signal.get('title', 'Unknown alert')} "
+        f"triggered with severity {signal.get('severity', 'N/A')}.\n"
+        f"Root cause: {hypothesis}\n"
+        f"Detection: Signal contained {str(signal.get('details', {}))}.\n"
+        f"Mitigation: {summary}\n"
+        f"Prevention: Review runbook recommendations and update monitoring.\n"
+    )
+
+    return {"title": title, "content": content, "summary": summary}
+
+
+def _bedrock_postmortem(context: dict, settings) -> dict:
+    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    system_prompt = (
+        "You are a database reliability engineer writing a postmortem. "
+        "Return a JSON object with keys: title (str), content (str, markdown postmortem with "
+        "Incident/Root cause/Detection/Mitigation/Prevention sections), summary (str, one-line summary)."
+    )
+    plan = context.get("plan", {})
+    user_msg = {
+        "role": "user",
+        "content": [{"text": (
+            f"Signal: {json.dumps(context.get('signal', {}))}\n"
+            f"Hypothesis: {context.get('hypothesis') or plan.get('hypothesis', '')}\n"
+            f"Summary: {context.get('summary') or plan.get('summary', '')}"
+        )}],
+    }
+    resp = client.converse(
+        modelId=settings.bedrock_llm_model,
+        system=[{"text": system_prompt}],
+        messages=[user_msg],
+        inferenceConfig={"maxTokens": 1024, "temperature": 0},
+    )
+    text = resp["output"]["message"]["content"][0]["text"]
+    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    return json.loads(text)
