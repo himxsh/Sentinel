@@ -8,6 +8,7 @@ from sentinel.memory import (
     update_incident,
     vector_recall,
 )
+from sentinel.tools.ccloud import control_plane
 from sentinel.tools.mcp_read import diagnose
 
 
@@ -32,7 +33,10 @@ def handle_alert(conn, signal: dict) -> dict:
     live = diagnose(signal)
     log_event(conn, incident_id, "agent", "observation", {"live_diagnostics": live})
 
-    plan = llm.plan({"signal": signal, "memories": memories, "live": live})
+    control = control_plane(signal)
+    log_event(conn, incident_id, "agent", "observation", {"control_plane": control})
+
+    plan = llm.plan({"signal": signal, "memories": memories, "live": live, "control": control})
     update_incident(conn, incident_id, hypothesis=plan["hypothesis"])
     log_event(conn, incident_id, "agent", "decision", {
         "hypothesis": plan["hypothesis"],

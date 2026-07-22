@@ -52,7 +52,8 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 
 ## Week 2
 
-- [ ] `ccloud` service account + `tools/ccloud.py`
+- [x] `tools/ccloud.py` (allow-listed `cluster list` / `cluster info`; wired into agent as `control_plane` observation)
+- [ ] `ccloud auth login` / service-account setup — needs human (Cloud Console)
 - [ ] Agent Skills integration
 - [ ] Remediation Lambda (dry-run + allow-list)
 - [ ] Postmortem learning loop

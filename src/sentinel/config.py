@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     bedrock_llm_model: str = "anthropic.claude-3-5-sonnet-20240620-v1:0"
     sentinel_read_user: str = ""
     sentinel_read_password: str = ""
+    ccloud_bin: str = "ccloud"
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

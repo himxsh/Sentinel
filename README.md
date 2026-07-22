@@ -30,12 +30,16 @@ Autonomous database-reliability agent using CockroachDB as persistent memory.
    ```
    Without `DATABASE_URL`, the test skips automatically.
 
-6. **Offline tests** (no DB required)
+6. **ccloud CLI** (optional — for control-plane observations)
+   - See `infra/ccloud_setup.md` for service-account + API key setup.
+   - Set `CCLOUD_BIN` in `.env` if `ccloud` is not on `PATH`.
+
+7. **Offline tests** (no DB required)
    ```
    .venv/bin/pytest tests/ -v
    ```
 
-7. **Demo incident** (requires `DATABASE_URL`)
+8. **Demo incident** (requires `DATABASE_URL`)
    ```
    .venv/bin/python scripts/demo_incident.py
    ```
