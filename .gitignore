@@ -35,10 +35,13 @@ htmlcov/
 # Local diagrams / scratch docs (not submission artifacts)
 docs/
 
+# Local planning / progress (keep on disk, do not ship)
+PLAN.md
+progress.md
+
 # Orchestrator / Cursor scratch (do not ship)
 .ocx-brief*.md
 *.plan.md
-!PLAN.md
 
 # Docker volume noise if ever mounted locally
 roach-data/
