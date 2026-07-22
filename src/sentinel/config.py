@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     sentinel_read_user: str = ""
     sentinel_read_password: str = ""
     ccloud_bin: str = "ccloud"
+    remediate_mode: str = "local"
+    remediate_lambda_url: str = ""
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 

@@ -10,6 +10,7 @@ from sentinel.memory import (
 )
 from sentinel.tools.ccloud import control_plane
 from sentinel.tools.mcp_read import diagnose
+from sentinel.tools.remediate import remediate
 from sentinel.tools.skills import run_skills
 
 
@@ -53,7 +54,10 @@ def handle_alert(conn, signal: dict) -> dict:
         if action.get("destructive"):
             log_event(conn, incident_id, "agent", "approval", {"awaiting": action})
             continue
-        record_action(conn, incident_id, action, destructive=False)
+        dry = remediate(action, dry_run=True)
+        log_event(conn, incident_id, "agent", "observation", {"dry_run": dry})
+        result = remediate(action, dry_run=False, approved=False)
+        record_action(conn, incident_id, {**action, "result": result}, destructive=False)
 
     set_status(conn, incident_id, "resolved")
     update_incident(conn, incident_id, resolution=plan["summary"])
