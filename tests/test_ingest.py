@@ -17,8 +17,8 @@ def test_normalize_defaults(monkeypatch):
         captured["signal"] = signal
         return {"incident_id": "x", "run_id": "r", "status": "resolved"}
 
-    monkeypatch.setattr("sentinel.db.execute", fake_execute)
-    monkeypatch.setattr("sentinel.agent.handle_alert", fake_handle_alert)
+    monkeypatch.setattr("lambdas.ingest.handler.execute", fake_execute)
+    monkeypatch.setattr("lambdas.ingest.handler.handle_alert", fake_handle_alert)
 
     handle({"details": {"cpu": 0.9}})
 
@@ -37,8 +37,8 @@ def test_parse_body_string(monkeypatch):
         captured["signal"] = signal
         return {"incident_id": "x", "run_id": "r", "status": "resolved"}
 
-    monkeypatch.setattr("sentinel.db.execute", fake_execute)
-    monkeypatch.setattr("sentinel.agent.handle_alert", fake_handle_alert)
+    monkeypatch.setattr("lambdas.ingest.handler.execute", fake_execute)
+    monkeypatch.setattr("lambdas.ingest.handler.handle_alert", fake_handle_alert)
 
     handle({"body": json.dumps({"title": "parsed", "severity": "P1"})})
 
@@ -56,8 +56,8 @@ def test_normalize_override(monkeypatch):
         captured["signal"] = signal
         return {"incident_id": "x", "run_id": "r", "status": "resolved"}
 
-    monkeypatch.setattr("sentinel.db.execute", fake_execute)
-    monkeypatch.setattr("sentinel.agent.handle_alert", fake_handle_alert)
+    monkeypatch.setattr("lambdas.ingest.handler.execute", fake_execute)
+    monkeypatch.setattr("lambdas.ingest.handler.handle_alert", fake_handle_alert)
 
     handle({"title": "Custom", "severity": "P1", "details": {"region": "us-east-1"}})
 
@@ -76,8 +76,8 @@ def test_local_path(monkeypatch):
         assert signal["title"] == "local-test"
         return expected
 
-    monkeypatch.setattr("sentinel.db.execute", fake_execute)
-    monkeypatch.setattr("sentinel.agent.handle_alert", fake_handle_alert)
+    monkeypatch.setattr("lambdas.ingest.handler.execute", fake_execute)
+    monkeypatch.setattr("lambdas.ingest.handler.handle_alert", fake_handle_alert)
 
     result = handle({"title": "local-test"})
 

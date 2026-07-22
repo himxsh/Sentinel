@@ -3,6 +3,9 @@ import os
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+from sentinel.agent import handle_alert
+from sentinel.db import execute
+
 DEFAULTS = {"title": "Alert", "severity": "P3", "details": {}}
 
 
@@ -52,11 +55,8 @@ def _remote(agent_url: str, signal: dict) -> dict:
 # ponytail: local path reuses execute/handle_alert like server.py;
 #            per-account pool if ingest volume grows
 def _local(signal: dict) -> dict:
-    from sentinel.agent import handle_alert as ha
-    from sentinel.db import execute
-
     def _q(conn):
-        return ha(conn, signal)
+        return handle_alert(conn, signal)
 
     result = execute(_q)
     return {"statusCode": 200, "body": json.dumps(result)}
