@@ -34,3 +34,8 @@ Autonomous database-reliability agent using CockroachDB as persistent memory.
    ```
    .venv/bin/pytest tests/ -v
    ```
+
+7. **Demo incident** (requires `DATABASE_URL`)
+   ```
+   .venv/bin/python scripts/demo_incident.py
+   ```

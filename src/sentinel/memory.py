@@ -59,6 +59,16 @@ def record_action(conn, incident_id, action: dict, *, destructive=False, actor="
     log_event(conn, incident_id, actor, "action", action)
 
 
+def update_incident(conn, incident_id, **fields) -> None:
+    allowed = {"hypothesis", "resolution", "title"}
+    cols = [k for k in fields if k in allowed]
+    if not cols:
+        return
+    set_clause = ", ".join(f"{c} = %s" for c in cols) + ", updated_at = now()"
+    vals = [fields[c] for c in cols] + [incident_id]
+    conn.execute(f"UPDATE incidents SET {set_clause} WHERE id = %s", vals)
+
+
 def vector_recall(conn, embedding: list[float], k=5) -> list[dict]:
     emb = "[" + ",".join(str(x) for x in embedding) + "]"
     cur = conn.execute(
