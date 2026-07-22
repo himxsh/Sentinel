@@ -62,7 +62,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 ## Week 3
 
 - [x] FastAPI UI (feed, SSE trace, audit, approval) — `server.py` + inline HTML
-- [ ] Lambda ingest
+- [x] Lambda ingest handler (normalize → local `handle_alert` or POST to `AGENT_URL`; not deployed)
 - [ ] Deploy agent + UI (ECS Fargate / App Runner) → public demo URL
 
 ## Week 4
@@ -77,7 +77,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 
 - [ ] **P0** — schema + vector recall + Bedrock reasoning + one scripted incident + local UI (+ MCP)
 - [ ] **P1** — ccloud + skills + postmortem loop + audit UI + live AWS URL
-- [ ] **P2** — failover demo, approval gate, S3 artifacts, Lambda ingest/executor split
+- [ ] **P2** — failover demo, approval gate, S3 artifacts, Lambda ingest/executor split (ingest handler built, not deployed)
 
 ## Current working defaults
 
