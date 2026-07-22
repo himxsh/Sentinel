@@ -1,6 +1,6 @@
 # Sentinel — Progress
 
-Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
+Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `6d74af8`.
 
 ## Week 1 — Day 1 (Cockroach Cloud)
 
@@ -75,12 +75,14 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 
 ## P0 / P1 / P2 cut-lines
 
-- [ ] **P0** — schema + vector recall + Bedrock reasoning + one scripted incident + local UI (+ MCP)
-- [ ] **P1** — ccloud + skills + postmortem loop + audit UI + live AWS URL
-- [ ] **P2** — failover demo, approval gate, S3 artifacts, Lambda ingest/executor split (ingest handler built, not deployed)
+- [x] **P0** — schema + vector recall + reasoning (fake LLM until Bedrock Claude) + scripted incident + local FastAPI UI (+ MCP stand-in via `sentinel_read`)
+- [~] **P1** — ccloud + skills + postmortem loop + audit UI done; live AWS demo URL still open
+- [ ] **P2** — failover demo, approval gate (code present), S3 artifacts, Lambda ingest/executor deploy
 
 ## Current working defaults
 
 - [x] `EMBEDDINGS_BACKEND=fake`
-- [x] LLM: fake until Claude is granted on Bedrock
+- [x] `LLM_BACKEND=fake` until Claude is granted on Bedrock
+- [x] `REMEDIATE_MODE=local`
 - [x] Memory / DB: Cockroach Cloud via `DATABASE_URL`
+- [x] Offline tests: 78 passed, 1 skipped (live recall)
