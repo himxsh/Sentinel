@@ -61,7 +61,7 @@ Aligned with `PLAN.md`. Last updated: 2026-07-22. Repo HEAD: `250ace0`.
 
 ## Week 3
 
-- [ ] FastAPI UI (feed, SSE trace, audit, approval)
+- [x] FastAPI UI (feed, SSE trace, audit, approval) — `server.py` + inline HTML
 - [ ] Lambda ingest
 - [ ] Deploy agent + UI (ECS Fargate / App Runner) → public demo URL
 

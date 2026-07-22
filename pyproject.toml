@@ -6,10 +6,12 @@ dependencies = [
     "psycopg[binary,pool]",
     "pydantic-settings",
     "boto3",
+    "fastapi",
+    "uvicorn",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "httpx"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

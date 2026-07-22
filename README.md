@@ -34,12 +34,17 @@ Autonomous database-reliability agent using CockroachDB as persistent memory.
    - See `infra/ccloud_setup.md` for service-account + API key setup.
    - Set `CCLOUD_BIN` in `.env` if `ccloud` is not on `PATH`.
 
-7. **Offline tests** (no DB required)
+7. **Run server** (local dev)
+   ```
+   .venv/bin/uvicorn sentinel.server:app --reload
+   ```
+
+8. **Offline tests** (no DB required)
    ```
    .venv/bin/pytest tests/ -v
    ```
 
-8. **Demo incident** (requires `DATABASE_URL`)
+9. **Demo incident** (requires `DATABASE_URL`)
    ```
    .venv/bin/python scripts/demo_incident.py
    ```
