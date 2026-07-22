@@ -50,6 +50,18 @@ def test_non_destructive_no_approval_needed():
     # no exception = success
 
 
+def test_log_event_sanitizes_datetime():
+    from datetime import datetime, timezone
+
+    c = _FakeConn()
+    now = datetime.now(timezone.utc)
+    log_event(c, "inc-1", "agent", "observation", {
+        "skills": {"triaging-live-sql-activity": {"queries": [{"rows": [{"start": now}]}]}},
+    })
+    detail = c.executes[-1][1][3]
+    assert detail.obj["skills"]["triaging-live-sql-activity"]["queries"][0]["rows"][0]["start"] == str(now)
+
+
 def test_store_knowledge():
     from sentinel.memory import store_knowledge
     c = _FakeConn(has_approval=False)

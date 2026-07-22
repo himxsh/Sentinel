@@ -50,9 +50,11 @@ def set_status(conn, incident_id, new_status: str, *, actor="agent", detail=None
 
 
 def log_event(conn, incident_id, actor, kind, detail: dict) -> None:
+    # root cause: skill/diagnose rows include datetime; Json() has no default=str
+    payload = _json_safe(detail) if isinstance(detail, dict) else detail
     conn.execute(
         "INSERT INTO incident_events (incident_id, actor, kind, detail) VALUES (%s, %s, %s, %s)",
-        (incident_id, actor, kind, Json(detail) if isinstance(detail, dict) else detail),
+        (incident_id, actor, kind, Json(payload) if isinstance(payload, dict) else payload),
     )
 
 
