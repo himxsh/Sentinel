@@ -32,6 +32,9 @@ htmlcov/
 *.swp
 *~
 
+# Local diagrams / scratch docs (not submission artifacts)
+docs/
+
 # Orchestrator / Cursor scratch (do not ship)
 .ocx-brief*.md
 *.plan.md
