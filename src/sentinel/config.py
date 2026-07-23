@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     embeddings_backend: str = "fake"
     llm_backend: str = "fake"
     aws_region: str = "us-east-1"
+    s3_bucket: str = ""
     bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
     bedrock_llm_model: str = "anthropic.claude-3-5-sonnet-20240620-v1:0"
     sentinel_read_user: str = ""

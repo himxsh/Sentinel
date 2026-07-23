@@ -48,3 +48,10 @@ Autonomous database-reliability agent using CockroachDB as persistent memory.
    ```
    .venv/bin/python scripts/demo_incident.py
    ```
+
+10. **AWS** — S3 bucket + Bedrock status: `infra/aws_setup.md`. Keep `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` until Bedrock quotas are non-zero.
+
+11. **Resilience check** (requires `DATABASE_URL`; connection-fault fallback for Basic clusters)
+    ```
+    ./scripts/resilience_demo.sh
+    ```
