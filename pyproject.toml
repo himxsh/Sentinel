@@ -16,6 +16,9 @@ dev = ["pytest", "httpx"]
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+sentinel = ["ui/*.html", "ui/static/*"]
+
 [build-system]
 requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"

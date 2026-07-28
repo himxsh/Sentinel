@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incident — Sentinel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">Sentinel</a>
+      <nav class="nav">
+        <a href="/incidents">Incidents</a>
+      </nav>
+    </header>
+
+    <div class="page-head">
+      <div>
+        <h1 id="title">Incident</h1>
+        <p id="sub" class="meta"></p>
+      </div>
+      <div class="meta" id="liveMeta">
+        <span class="live-dot off" id="liveDot" aria-hidden="true"></span>
+        <span id="liveLabel">idle</span>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <section class="panel">
+        <h2>Case</h2>
+        <p id="caseBody" class="empty">Loading…</p>
+        <div id="approveArea" style="margin-top:1rem"></div>
+      </section>
+      <section class="panel">
+        <h2>Memory outcome</h2>
+        <p id="memoryBody" class="empty">Hypothesis and postmortem appear as the agent writes them.</p>
+      </section>
+      <section class="panel timeline-wrap">
+        <h2>Audit timeline</h2>
+        <div class="timeline" id="timeline"></div>
+      </section>
+    </div>
+  </div>
+  <script src="/static/app.js"></script>
+  <script>
+    const {
+      api, esc, fmtTs, shortId, pendingApproval, renderEvents, toast
+    } = SentinelUI;
+
+    const id = location.pathname.split("/").filter(Boolean).pop();
+    const ACTIVE = new Set(["open", "diagnosing", "remediating"]);
+    let pollTimer = null;
+    let lastEventCount = -1;
+
+    async function approve() {
+      try {
+        const data = await api(`/api/incidents/${id}/approve`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        });
+        if (data.approved) {
+          toast("Approved — remediation recorded");
+          await refresh();
+        } else {
+          toast("Approve failed");
+        }
+      } catch (e) {
+        toast("Approve failed: " + e.message);
+      }
+    }
+
+    function render(i) {
+      document.title = `${i.title} — Sentinel`;
+      document.getElementById("title").textContent = i.title;
+      document.getElementById("sub").innerHTML =
+        `<span class="badge sev-${esc(i.severity)}">${esc(i.severity)}</span>` +
+        `<span class="status-${esc(i.status)}">${esc(i.status)}</span>` +
+        `<span class="mono">${esc(shortId(i.id))}</span>` +
+        `<span>${esc(fmtTs(i.created_at))}</span>`;
+
+      document.getElementById("caseBody").innerHTML =
+        `<p><strong>Status</strong> · ${esc(i.status)}</p>` +
+        `<p><strong>Severity</strong> · ${esc(i.severity)}</p>` +
+        `<p class="mono muted">Updated ${esc(fmtTs(i.updated_at))}</p>`;
+
+      const mem = [];
+      if (i.hypothesis) mem.push(`<p><strong>Hypothesis</strong><br>${esc(i.hypothesis)}</p>`);
+      if (i.resolution) mem.push(`<p><strong>Resolution / postmortem</strong><br>${esc(i.resolution)}</p>`);
+      document.getElementById("memoryBody").innerHTML = mem.length
+        ? mem.join("")
+        : `<p class="empty">Waiting for hypothesis and postmortem…</p>`;
+
+      const awaiting = pendingApproval(i.events);
+      const area = document.getElementById("approveArea");
+      if (awaiting) {
+        area.innerHTML =
+          `<button type="button" class="btn btn-primary" id="approveBtn">Approve destructive action</button>` +
+          `<p class="muted mono" style="margin-top:0.5rem">${esc(JSON.stringify(awaiting))}</p>`;
+        document.getElementById("approveBtn").onclick = approve;
+      } else {
+        area.innerHTML = "";
+      }
+
+      const events = i.events || [];
+      if (events.length !== lastEventCount) {
+        renderEvents(document.getElementById("timeline"), events);
+        lastEventCount = events.length;
+      }
+
+      const live = ACTIVE.has(i.status);
+      document.getElementById("liveDot").classList.toggle("off", !live);
+      document.getElementById("liveLabel").textContent = live ? "live trace" : "settled";
+      return live;
+    }
+
+    async function refresh() {
+      const i = await api(`/api/incidents/${id}`);
+      return render(i);
+    }
+
+    function startPoll() {
+      stopPoll();
+      pollTimer = setInterval(async () => {
+        try {
+          const live = await refresh();
+          if (!live) stopPoll();
+        } catch (_) { /* keep polling briefly */ }
+      }, 2000);
+    }
+
+    function stopPoll() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = null;
+    }
+
+    function startSSE() {
+      if (!window.EventSource) return;
+      try {
+        const es = new EventSource(`/api/incidents/${id}/stream`);
+        es.onmessage = () => { refresh().catch(() => {}); es.close(); };
+        es.onerror = () => es.close();
+      } catch (_) { /* poll covers us */ }
+    }
+
+    refresh()
+      .then((live) => {
+        startSSE();
+        if (live) startPoll();
+      })
+      .catch((e) => {
+        document.getElementById("caseBody").textContent = "Not found or unreachable: " + e.message;
+      });
+  </script>
+</body>
+</html>
