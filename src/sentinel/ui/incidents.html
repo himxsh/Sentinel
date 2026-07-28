@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incidents — Sentinel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <a class="brand" href="/">Sentinel</a>
+      <nav class="nav">
+        <a href="/incidents" aria-current="page">Incidents</a>
+      </nav>
+    </header>
+
+    <div class="page-head">
+      <div>
+        <h1>Incidents</h1>
+        <p>Live feed of durable agent memory — status, severity, and when each case opened.</p>
+      </div>
+      <button type="button" class="btn btn-signal" id="fireBtn">Fire demo alert</button>
+    </div>
+
+    <p id="loading" class="muted">Loading…</p>
+    <ul class="feed" id="feed" hidden></ul>
+    <p id="empty" class="muted" hidden>No incidents yet. Fire a demo alert to open one.</p>
+  </div>
+  <script src="/static/app.js"></script>
+  <script>
+    const { api, esc, shortId, fmtTs, fireDemoAlert } = SentinelUI;
+
+    document.getElementById("fireBtn").addEventListener("click", function () {
+      fireDemoAlert(this);
+    });
+
+    async function load() {
+      const data = await api("/api/incidents");
+      const feed = document.getElementById("feed");
+      const loading = document.getElementById("loading");
+      const empty = document.getElementById("empty");
+      loading.hidden = true;
+      if (!data.length) {
+        empty.hidden = false;
+        feed.hidden = true;
+        return;
+      }
+      empty.hidden = true;
+      feed.hidden = false;
+      feed.innerHTML = data.map((i) => `
+        <li>
+          <a href="/incidents/${esc(i.id)}">
+            <span class="feed-title">${esc(i.title)}</span>
+            <span class="meta">
+              <span class="badge sev-${esc(i.severity)}">${esc(i.severity)}</span>
+              <span class="status-${esc(i.status)}">${esc(i.status)}</span>
+              <span>${esc(shortId(i.id))}</span>
+              <span>${esc(fmtTs(i.created_at))}</span>
+            </span>
+          </a>
+        </li>`).join("");
+    }
+
+    load().catch((e) => {
+      document.getElementById("loading").textContent = "Failed to load: " + e.message;
+    });
+  </script>
+</body>
+</html>
