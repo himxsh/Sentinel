@@ -18,6 +18,28 @@ def test_index():
     resp = client.get("/")
     assert resp.status_code == 200
     assert "text/html" in resp.headers["content-type"]
+    assert "Sentinel" in resp.text
+    assert "Fire demo alert" in resp.text
+
+
+def test_incidents_page():
+    resp = client.get("/incidents")
+    assert resp.status_code == 200
+    assert "Incident feed" in resp.text or "Incidents" in resp.text
+
+
+def test_incident_detail_page():
+    resp = client.get("/incidents/abc-123")
+    assert resp.status_code == 200
+    assert "Audit timeline" in resp.text
+
+
+def test_static_assets():
+    css = client.get("/static/app.css")
+    js = client.get("/static/app.js")
+    assert css.status_code == 200
+    assert js.status_code == 200
+    assert "fireDemoAlert" in js.text
 
 
 def test_list_incidents_empty(monkeypatch):
