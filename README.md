@@ -53,6 +53,12 @@ Agent    →  recall → diagnose → plan → remediate → postmortem → know
    - `/incidents` — feed
    - `/incidents/{id}` — detail, audit timeline, live poll + SSE, approve CTA
 
+   Next.js demo (plain-language UI in `web/`):
+   ```
+   cd web && npm install && npm run dev
+   ```
+   Open http://localhost:3000. It proxies `/api/*` to the FastAPI agent. See `web/README.md`.
+
 8. **Offline tests** (no DB required)
    ```
    .venv/bin/pytest tests/ -v

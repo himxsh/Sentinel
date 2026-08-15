@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32" fill="none" role="img" aria-label="Sentinel">
+  <title>Sentinel</title>
+  <rect x="0.5" y="0.5" width="31" height="31" rx="7.5" fill="#0F1C2E" stroke="#F4F7FB" stroke-opacity="0.14" stroke-width="1"/>
+  <path
+    d="M16.5 10.05H13A3.75 3.75 0 0 0 9.25 13.8v6A3.75 3.75 0 0 0 13 23.55h6A3.75 3.75 0 0 0 22.75 19.8v-3.25"
+    stroke="#F4F7FB"
+    stroke-width="3.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <circle cx="23.1" cy="10.2" r="3.2" fill="#0D7A6F"/>
+</svg>
