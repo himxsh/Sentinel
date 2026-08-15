@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { createRequire } from "node:module";
 import { pendingApproval, shortId, statusLabel } from "../lib/format.ts";
+
+assert.ok(createRequire(import.meta.url).resolve("lenis/react"));
 
 assert.equal(shortId("abcdefghijklmnop"), "abcdefgh");
 assert.equal(statusLabel("diagnosing"), "Looking");

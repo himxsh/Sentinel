@@ -41,7 +41,7 @@ function EventBody({ event }: { event: IncidentEvent }) {
       {summary ? <p className="m-0">{summary}</p> : null}
       <details>
         <summary className="cursor-pointer font-mono text-[0.75rem] text-ink-muted">Raw note</summary>
-        <pre>{JSON.stringify(event.detail, null, 2)}</pre>
+        <pre data-lenis-prevent>{JSON.stringify(event.detail, null, 2)}</pre>
       </details>
     </>
   );
