@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Instrument_Serif, Spline_Sans_Mono } from "next/font/google";
 import { Footer } from "@/components/Footer";
+import { SmoothScroll } from "@/components/SmoothScroll";
 import { ToastHost } from "@/components/ToastHost";
 import "./globals.css";
 
@@ -44,9 +45,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${display.variable} ${sans.variable} ${mono.variable} h-full`}
+      className={`${display.variable} ${sans.variable} ${mono.variable}`}
     >
       <body className="min-h-full font-sans antialiased">
+        <SmoothScroll />
         {children}
         <Footer />
         <ToastHost />
