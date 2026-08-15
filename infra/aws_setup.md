@@ -54,11 +54,13 @@ LLM_BACKEND=fake
 
 ### Human steps to unlock
 
-1. Open [AWS Support](https://console.aws.amazon.com/support/home) and request Bedrock / foundation-model access for account `951532862171` (mention Titan Embed Text v2 + Anthropic Claude; region `us-east-1`).
-2. After Support clears the account restriction, open **Amazon Bedrock → Model access / Model catalog** in `us-east-1`.
-3. Submit the Anthropic first-time use (FTU) form in the console (or retry `put-use-case-for-model-access`).
-4. Accept the Claude marketplace agreement if prompted.
-5. Smoke test:
+1. Open [AWS Support Center](https://console.aws.amazon.com/support/home) (Account and billing cases are free; the Support API needs a paid plan).
+2. Create a case — prefer **Account and billing** if Service limit increase is unavailable on Free Plan.
+3. Paste the request below (account `951532862171`, region `us-east-1`).
+4. After Support clears the restriction, open **Amazon Bedrock → Model access / Model catalog** in `us-east-1`.
+5. Submit the Anthropic first-time use (FTU) form in the console (or retry `put-use-case-for-model-access`).
+6. Accept the Claude marketplace agreement if prompted.
+7. Smoke test:
 
 ```bash
 # Titan
@@ -78,6 +80,34 @@ Optional model override:
 
 ```env
 BEDROCK_LLM_MODEL=anthropic.claude-haiku-4-5-20251001-v1:0
+```
+
+#### Paste into the Support case
+
+**Subject:** Enable Amazon Bedrock model access (Titan Embeddings V2 + Anthropic Claude)
+
+**Body:**
+
+```
+Account ID: 951532862171
+Region: us-east-1
+Use case: Hackathon project "Sentinel" (CockroachDB x AWS) — autonomous DB reliability agent.
+Public repo: https://github.com/himxsh/Sentinel
+
+What we need:
+1. On-demand inference access for amazon.titan-embed-text-v2:0 (text embeddings, 1024 dims).
+2. Ability to submit the Anthropic first-time use (FTU) form and then invoke Claude on Bedrock (e.g. anthropic.claude-haiku-4-5-20251001-v1:0 or Claude 3.5 Sonnet).
+
+What fails today:
+- bedrock-runtime InvokeModel for amazon.titan-embed-text-v2:0 returns ValidationException: Operation not allowed.
+- get-foundation-model-availability shows authorizationStatus NOT_AUTHORIZED for Titan Embed Text v2 and Claude Haiku 4.5.
+- Service Quotas for "On-demand model inference requests per minute for Amazon Titan Text Embeddings V2" is 0.0.
+- put-use-case-for-model-access returns ValidationException: Your account is not authorized to perform this action. Please create a support case...
+- create-foundation-model-agreement for Claude fails with AccessDeniedException: You have not filled out the request form.
+
+Please enable Bedrock foundation-model access / raise the Titan Embeddings V2 on-demand quota above 0, and authorize PutUseCaseForModelAccess so we can complete Anthropic FTU.
+
+Expected volume is hackathon-scale smoke tests only (low RPM). Billing contact and payment method are already on the account.
 ```
 
 ## IAM (minimal local / Lambda)
