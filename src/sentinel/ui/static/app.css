@@ -50,6 +50,9 @@ a:hover { color: var(--ink); }
 }
 
 .brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-family: var(--mono);
   font-weight: 600;
   font-size: 0.95rem;
@@ -57,6 +60,13 @@ a:hover { color: var(--ink); }
   text-transform: uppercase;
   color: var(--ink);
   text-decoration: none;
+}
+
+.brand-mark {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
 }
 
 .nav {
