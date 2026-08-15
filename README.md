@@ -68,6 +68,8 @@ Agent    →  recall → diagnose → plan → remediate → postmortem → know
    ```
    .venv/bin/python scripts/smoke_ui.py
    DATABASE_URL=... .venv/bin/python scripts/smoke_ui.py
+
+   
    ```
 
 10. **Demo incident** (requires `DATABASE_URL`)
