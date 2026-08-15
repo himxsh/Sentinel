@@ -22,7 +22,7 @@ export default async function IncidentsPage() {
       <Header current="incidents" />
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="m-0 text-[1.875rem] font-semibold tracking-[-0.02em]">Cases</h1>
+          <h1 className="m-0 text-[2.35rem] leading-[1.12] tracking-[-0.02em]">Cases</h1>
           <p className="mt-2 max-w-[42ch] text-ink-muted">
             Live memory of every alert Sentinel has opened, looked into, and filed.
           </p>

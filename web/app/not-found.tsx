@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <div className="shell shell-narrow">
       <Header />
-      <h1 className="m-0 text-[1.875rem] font-semibold">Page not found</h1>
+      <h1 className="m-0 text-[2.15rem] leading-[1.15]">Page not found</h1>
       <p className="mt-3 max-w-[42ch] text-ink-muted">
         That route is not part of the demo. Head back to the start or open the case list.
       </p>

@@ -137,7 +137,7 @@ export function IncidentDetail({ id }: { id: string }) {
     <>
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="m-0 max-w-[28ch] text-[1.875rem] font-semibold tracking-[-0.02em]">
+          <h1 className="m-0 max-w-[28ch] text-[2.15rem] leading-[1.15] tracking-[-0.02em]">
             {incident.title}
           </h1>
           <p className="meta mt-3">

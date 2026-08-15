@@ -22,15 +22,15 @@ export default function Home() {
   return (
     <div className="shell">
       <Header />
-      <main className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)] lg:gap-16">
-        <div className="rise min-h-0 pt-4 lg:pt-8">
-          <h1 className="m-0 max-w-[14ch] text-[clamp(2.5rem,8vw,4.25rem)] font-semibold leading-[1.05] tracking-[-0.03em]">
-            The on-call that remembers.
+      <main className="grid min-h-[min(72dvh,40rem)] items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16">
+        <div className="rise min-h-0 pt-2 lg:pt-4">
+          <h1 className="m-0 max-w-[13ch] text-[clamp(2.75rem,8vw,4.75rem)] leading-[1.12] tracking-[-0.02em]">
+            The on-call that <em className="italic">remembers</em>.
           </h1>
           <p className="mt-5 max-w-[38ch] text-[1.125rem] text-ink-muted">
             When a database gets sick, Sentinel opens a case, checks what worked last time, and files what it did.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-8 flex flex-wrap gap-3">
             <FireAlertButton />
             <Link className="btn btn-ghost" href="/incidents">
               See past cases
@@ -38,7 +38,7 @@ export default function Home() {
           </div>
         </div>
 
-        <figure className="rise m-0 overflow-hidden rounded-lg border border-line bg-surface">
+        <figure className="hero-frame rise m-0">
           <Image
             src="/watch-floor.png"
             alt="A quiet data-center aisle with teal status lights on the racks"
@@ -50,14 +50,14 @@ export default function Home() {
         </figure>
       </main>
 
-      <ol className="mt-20 max-w-[62ch] border-t border-line pt-10">
+      <ol className="mt-20 max-w-[62ch] border-t border-line pt-4">
         {STEPS.map((step, index) => (
-          <li key={step.title} className="grid gap-2 border-b border-line py-6 md:grid-cols-[4.5rem_1fr] md:gap-8">
-            <p className="m-0 font-mono text-[0.78rem] font-semibold uppercase tracking-wide text-signal-ink">
+          <li key={step.title} className="grid gap-2 border-b border-line py-7 md:grid-cols-[4.5rem_1fr] md:gap-8">
+            <p className="m-0 font-mono text-[0.78rem] font-semibold text-signal-ink">
               {String(index + 1).padStart(2, "0")}
             </p>
             <div>
-              <h2 className="m-0 text-xl font-semibold tracking-[-0.02em]">{step.title}</h2>
+              <h2 className="m-0 text-[1.65rem] leading-[1.15]">{step.title}</h2>
               <p className="mt-2 text-ink-muted">{step.body}</p>
             </div>
           </li>

@@ -1,21 +1,34 @@
-import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Figtree, Instrument_Serif, Spline_Sans_Mono } from "next/font/google";
 import { ToastHost } from "@/components/ToastHost";
 import "./globals.css";
 
-const sans = IBM_Plex_Sans({
+const display = Instrument_Serif({
   subsets: ["latin"],
-  weight: ["400", "600"],
-  variable: "--font-ibm-sans",
+  weight: "400",
+  style: ["normal", "italic"],
+  variable: "--font-instrument",
   display: "swap",
 });
 
-const mono = IBM_Plex_Mono({
+const sans = Figtree({
   subsets: ["latin"],
-  weight: ["400", "600"],
-  variable: "--font-ibm-mono",
+  weight: ["400", "500", "600"],
+  variable: "--font-figtree",
   display: "swap",
 });
+
+const mono = Spline_Sans_Mono({
+  subsets: ["latin"],
+  weight: ["400", "600"],
+  variable: "--font-spline",
+  display: "swap",
+});
+
+export const viewport: Viewport = {
+  colorScheme: "dark",
+  themeColor: "#141A24",
+};
 
 export const metadata: Metadata = {
   title: {
@@ -28,7 +41,10 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${sans.variable} ${mono.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${display.variable} ${sans.variable} ${mono.variable} h-full`}
+    >
       <body className="min-h-full font-sans antialiased">
         {children}
         <ToastHost />

@@ -1,20 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --canvas: oklch(0.935 0.012 250);
-  --canvas-deep: oklch(0.88 0.018 250);
-  --surface: oklch(0.975 0.008 250);
-  --ink: oklch(0.24 0.04 250);
-  --ink-muted: oklch(0.42 0.03 250);
-  --line: oklch(0.24 0.04 250 / 0.12);
-  --signal: oklch(0.52 0.09 175);
-  --signal-ink: oklch(0.42 0.08 175);
-  --signal-soft: oklch(0.92 0.04 175);
-  --warn: oklch(0.52 0.12 75);
-  --danger: oklch(0.52 0.17 28);
-  --ok: oklch(0.48 0.11 145);
-  --on-signal: oklch(0.99 0.01 175);
-  --on-ink: oklch(0.975 0.008 250);
+  --canvas: oklch(0.17 0.02 250);
+  --canvas-deep: oklch(0.13 0.02 250);
+  --surface: oklch(0.22 0.022 250);
+  --ink: oklch(0.94 0.015 95);
+  --ink-muted: oklch(0.78 0.02 250);
+  --line: oklch(0.94 0.015 95 / 0.12);
+  --signal: oklch(0.82 0.12 175);
+  --signal-ink: oklch(0.86 0.1 175);
+  --signal-soft: oklch(0.28 0.04 175);
+  --warn: oklch(0.82 0.12 75);
+  --danger: oklch(0.74 0.16 25);
+  --ok: oklch(0.78 0.12 155);
+  --on-signal: oklch(0.16 0.03 175);
+  --on-ink: oklch(0.17 0.02 250);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
@@ -33,8 +33,13 @@
   --color-ok: var(--ok);
   --color-on-signal: var(--on-signal);
   --color-on-ink: var(--on-ink);
-  --font-sans: var(--font-ibm-sans), "Helvetica Neue", sans-serif;
-  --font-mono: var(--font-ibm-mono), ui-monospace, monospace;
+  --font-sans: var(--font-figtree), "Helvetica Neue", sans-serif;
+  --font-display: var(--font-instrument), "Iowan Old Style", Georgia, serif;
+  --font-mono: var(--font-spline), ui-monospace, monospace;
+}
+
+html {
+  color-scheme: dark;
 }
 
 html,
@@ -46,18 +51,21 @@ body {
   margin: 0;
   color: var(--ink);
   background:
-    radial-gradient(1200px 600px at 10% -10%, var(--signal-soft) 0%, transparent 55%),
-    radial-gradient(900px 500px at 100% 0%, oklch(0.9 0.03 250) 0%, transparent 50%),
-    linear-gradient(165deg, var(--canvas) 0%, var(--canvas-deep) 100%);
+    radial-gradient(900px 520px at 8% -8%, var(--signal-soft) 0%, transparent 58%),
+    radial-gradient(800px 480px at 100% 0%, oklch(0.22 0.04 250) 0%, transparent 52%),
+    linear-gradient(180deg, var(--canvas) 0%, var(--canvas-deep) 100%);
   background-attachment: fixed;
   font-family: var(--font-sans);
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 h1,
 h2,
 h3 {
   text-wrap: balance;
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.02em;
 }
 
 p {
@@ -81,7 +89,7 @@ a:hover {
 .shell {
   width: min(1120px, calc(100% - 2rem));
   margin: 0 auto;
-  padding: 1.25rem 0 4rem;
+  padding: 1.25rem 0 4.5rem;
 }
 
 .shell-narrow {
@@ -98,17 +106,18 @@ a:hover {
 }
 
 .brand {
-  font-family: var(--font-mono);
-  font-weight: 600;
-  font-size: 0.95rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 1.45rem;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   color: var(--ink);
   text-decoration: none;
 }
 
 .brand:hover {
-  color: var(--signal-ink);
+  color: var(--signal);
 }
 
 .nav a {
@@ -131,7 +140,8 @@ a:hover {
   border-radius: 8px;
   padding: 0.75rem 1.25rem;
   min-height: 44px;
-  font: inherit;
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   text-decoration: none;
@@ -180,7 +190,7 @@ a:hover {
 }
 
 .btn-ink:hover:not(:disabled) {
-  background: oklch(0.3 0.04 250);
+  background: oklch(0.88 0.02 95);
   color: var(--on-ink);
 }
 
@@ -192,23 +202,23 @@ a:hover {
   text-transform: uppercase;
   padding: 0.2rem 0.45rem;
   border-radius: 4px;
-  background: oklch(0.24 0.04 250 / 0.06);
+  background: oklch(0.94 0.015 95 / 0.08);
 }
 
 .sev-P1 {
   color: var(--danger);
-  background: oklch(0.52 0.17 28 / 0.12);
+  background: oklch(0.74 0.16 25 / 0.16);
 }
 
 .sev-P2 {
   color: var(--warn);
-  background: oklch(0.52 0.12 75 / 0.14);
+  background: oklch(0.82 0.12 75 / 0.14);
 }
 
 .sev-P3,
 .sev-P4 {
-  color: oklch(0.38 0.07 250);
-  background: oklch(0.38 0.07 250 / 0.1);
+  color: oklch(0.78 0.08 250);
+  background: oklch(0.78 0.08 250 / 0.12);
 }
 
 .status-open,
@@ -239,7 +249,7 @@ a:hover {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.35rem 1rem;
-  padding: 1rem 0.15rem;
+  padding: 1.05rem 0.15rem;
   text-decoration: none;
   color: inherit;
   min-height: 44px;
@@ -251,11 +261,14 @@ a:hover {
 }
 
 .feed a:hover {
-  background: oklch(1 0 0 / 0.35);
+  background: oklch(0.94 0.015 95 / 0.04);
 }
 
 .feed-title {
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 400;
+  letter-spacing: -0.02em;
   grid-column: 1 / -1;
 }
 
@@ -273,14 +286,14 @@ a:hover {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 1.1rem 1.2rem;
+  padding: 1.15rem 1.25rem;
 }
 
 .panel h2 {
   margin: 0 0 0.65rem;
-  font-size: 0.78rem;
   font-family: var(--font-mono);
-  letter-spacing: 0.06em;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-muted);
   font-weight: 600;
@@ -288,9 +301,9 @@ a:hover {
 
 .event {
   border: 1px solid var(--line);
-  background: var(--surface);
+  background: oklch(0.19 0.02 250);
   border-radius: 8px;
-  padding: 0.7rem 0.85rem;
+  padding: 0.75rem 0.9rem;
 }
 
 .event + .event {
@@ -331,18 +344,19 @@ a:hover {
   width: 0.55rem;
   height: 0.55rem;
   border-radius: 50%;
-  background: var(--signal);
+  background: var(--ink-muted);
   display: inline-block;
 }
 
 .live-dot.on {
-  box-shadow: 0 0 0 0 oklch(0.52 0.09 175 / 0.45);
+  background: var(--signal);
+  box-shadow: 0 0 0 0 oklch(0.82 0.12 175 / 0.45);
   animation: pulse 1.6s var(--ease-out) infinite;
 }
 
 .skeleton {
   border-radius: 8px;
-  background: oklch(0.24 0.04 250 / 0.08);
+  background: oklch(0.94 0.015 95 / 0.08);
   animation: shimmer 1.2s ease infinite;
 }
 
@@ -371,6 +385,22 @@ a:hover {
   opacity: 1;
 }
 
+.hero-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+
+.hero-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(180deg, transparent 55%, var(--canvas-deep));
+}
+
 .rise {
   animation: rise 0.55s var(--ease-out) both;
 }
@@ -388,23 +418,23 @@ a:hover {
 
 @keyframes pulse {
   0% {
-    box-shadow: 0 0 0 0 oklch(0.52 0.09 175 / 0.4);
+    box-shadow: 0 0 0 0 oklch(0.82 0.12 175 / 0.4);
   }
   70% {
-    box-shadow: 0 0 0 10px oklch(0.52 0.09 175 / 0);
+    box-shadow: 0 0 0 10px oklch(0.82 0.12 175 / 0);
   }
   100% {
-    box-shadow: 0 0 0 0 oklch(0.52 0.09 175 / 0);
+    box-shadow: 0 0 0 0 oklch(0.82 0.12 175 / 0);
   }
 }
 
 @keyframes shimmer {
   0%,
   100% {
-    opacity: 0.55;
+    opacity: 0.45;
   }
   50% {
-    opacity: 1;
+    opacity: 0.9;
   }
 }
 
