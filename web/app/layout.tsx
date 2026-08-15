@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Figtree, Instrument_Serif, Spline_Sans_Mono } from "next/font/google";
+import { Footer } from "@/components/Footer";
 import { ToastHost } from "@/components/ToastHost";
 import "./globals.css";
 
@@ -47,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full font-sans antialiased">
         {children}
+        <Footer />
         <ToastHost />
       </body>
     </html>

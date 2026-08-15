@@ -35,7 +35,15 @@ export default async function IncidentsPage() {
           {error}
         </p>
       ) : incidents.length === 0 ? (
-        <p className="text-ink-muted">No cases yet. Fire a demo alert to open the first one.</p>
+        <div className="max-w-[46ch]">
+          <p className="m-0 text-ink-muted">
+            No cases yet. Fire the demo alert to open a P1 about a runaway query. You will land on that case, with the
+            trail filling in as Sentinel works.
+          </p>
+          <p className="mt-4">
+            <Link href="/how">Read how the loop runs</Link>
+          </p>
+        </div>
       ) : (
         <ul className="feed">
           {incidents.map((incident) => (

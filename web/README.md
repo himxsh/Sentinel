@@ -22,6 +22,7 @@ npm run dev
 Open http://localhost:3000
 
 - `/` fire a demo alert
+- `/how` what the loop does, in order
 - `/incidents` case list
 - `/incidents/[id]` case, conclusion, audit timeline, approve if needed
 

@@ -130,6 +130,12 @@ a:hover {
   color: var(--signal);
 }
 
+.nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 1.35rem;
+}
+
 .nav a {
   color: var(--ink-muted);
   text-decoration: none;
@@ -409,6 +415,66 @@ a:hover {
   inset: 0;
   pointer-events: none;
   background: linear-gradient(180deg, transparent 55%, var(--canvas-deep));
+}
+
+.facts {
+  display: grid;
+  gap: 1.15rem 2rem;
+}
+
+@media (min-width: 720px) {
+  .facts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.fact dt {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-muted);
+}
+
+.fact dd {
+  margin: 0.3rem 0 0;
+  font-size: 1.05rem;
+}
+
+.pull {
+  font-family: var(--font-display);
+  font-size: clamp(1.65rem, 3.2vw, 2.2rem);
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  max-width: 18ch;
+}
+
+.memory-row {
+  display: grid;
+  gap: 0.45rem;
+  padding: 1.35rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+@media (min-width: 768px) {
+  .memory-row {
+    grid-template-columns: 11rem 1fr;
+    gap: 2rem;
+    align-items: baseline;
+  }
+}
+
+.band {
+  margin-top: 4.5rem;
+  padding-top: 2.5rem;
+  border-top: 1px solid var(--line);
+}
+
+.site-footer {
+  width: min(1120px, calc(100% - 2rem));
+  margin: 0 auto;
+  padding: 2.25rem 0 3rem;
+  border-top: 1px solid var(--line);
+  color: var(--ink-muted);
+  font-size: 0.95rem;
 }
 
 .rise {
