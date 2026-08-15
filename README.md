@@ -67,7 +67,7 @@ Agent    →  recall → diagnose → plan → remediate → postmortem → know
 9. **UI smoke** (offline always; live loop when `DATABASE_URL` is set)
    ```
    .venv/bin/python scripts/smoke_ui.py
-   DATABASE_URL=... .venv/bin/python scripts/smoke_ui.py
+   DATABASE_URL=... .venv/bin/python scripts/smoke_ui.py   
    ```
 
 10. **Demo incident** (requires `DATABASE_URL`)
