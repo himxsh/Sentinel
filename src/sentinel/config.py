@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     embeddings_backend: str = "fake"
     llm_backend: str = "fake"
     aws_region: str = "us-east-1"
+    bedrock_region: str = "us-west-2"
     s3_bucket: str = ""
     bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
     bedrock_llm_model: str = "qwen.qwen3-coder-480b-a35b-v1:0"

@@ -51,7 +51,7 @@ def _fake_plan(context: dict) -> dict:
 
 
 def _bedrock_plan(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer. Given an incident signal and relevant knowledge, "
         "return a JSON object with keys: hypothesis (str), actions (list of dicts with cmd/args/destructive), "
@@ -111,7 +111,7 @@ def _fake_postmortem(context: dict) -> dict:
 
 
 def _bedrock_postmortem(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer writing a postmortem. "
         "Return a JSON object with keys: title (str), content (str, markdown postmortem with "

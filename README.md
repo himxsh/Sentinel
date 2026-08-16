@@ -22,7 +22,7 @@ flowchart LR
     Tools --> Skills[4 curated SQL skills]
     Agent --> PM[Postmortem]
     PM --> S3[(S3<br/>postmortems/)]
-    Agent --> Bedrock[Bedrock<br/>live LLM — Qwen3 Coder 480B]
+    Agent --> Bedrock[Bedrock Qwen 480B<br/>us-west-2 — enable in console]
     Agent -.-> Lambda[Lambda handlers<br/>in repo, not deployed]
 ```
 
@@ -38,7 +38,7 @@ Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` ar
 ## AWS services
 
 - **S3** — postmortem markdown uploads to `sentinel-artifacts-951532862171-us-east-1` under `postmortems/{incident_id}.md` when `S3_BUCKET` is set. Soft-fails: upload errors never break the agent loop.
-- **Bedrock** — plan + postmortem run on live Qwen3 Coder 480B (`qwen.qwen3-coder-480b-a35b-v1:0`) via Converse when `LLM_BACKEND=bedrock` (`llm.py`). Embeddings remain fake: Titan is still blocked on this account, and Claude is not used.
+- **Bedrock** — plan + postmortem run on Qwen3 Coder 480B (`qwen.qwen3-coder-480b-a35b-v1:0`) via Converse in `us-west-2` when `LLM_BACKEND=bedrock` (`llm.py`). Embeddings remain fake (Titan is fake by default; not yet verified live). Invoke on this account still needs Qwen model access enabled in the Bedrock console (`NOT_AUTHORIZED` / `Operation not allowed` until then).
 - **Lambda** — remediation handlers exist under `lambdas/` but are not deployed; local remediation (`REMEDIATE_MODE=local`) is the default.
 - **Containers** — Dockerfile at repo root; deploy notes in `infra/deploy.md`. Not deployed.
 
