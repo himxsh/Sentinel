@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     aws_region: str = "us-east-1"
     s3_bucket: str = ""
     bedrock_embed_model: str = "amazon.titan-embed-text-v2:0"
-    bedrock_llm_model: str = "anthropic.claude-3-5-sonnet-20240620-v1:0"
+    bedrock_llm_model: str = "qwen.qwen3-coder-480b-a35b-v1:0"
     sentinel_read_user: str = ""
     sentinel_read_password: str = ""
     ccloud_bin: str = "ccloud"

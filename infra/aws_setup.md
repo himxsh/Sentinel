@@ -29,7 +29,26 @@ aws sts get-caller-identity
 
 Prefer short-lived creds over long-lived access keys. Root is fine for hackathon smoke only.
 
-## Blocked: Bedrock model access
+## Live: Qwen3 Coder 480B (plan + postmortem)
+
+`qwen.qwen3-coder-480b-a35b-v1:0` is available in-region (`us-east-1`) on this account. Set:
+
+```env
+LLM_BACKEND=bedrock
+BEDROCK_LLM_MODEL=qwen.qwen3-coder-480b-a35b-v1:0
+```
+
+Smoke test (Converse is what `src/sentinel/llm.py` uses):
+
+```bash
+aws bedrock-runtime converse \
+  --region us-east-1 \
+  --model-id qwen.qwen3-coder-480b-a35b-v1:0 \
+  --messages '[{"role":"user","content":[{"text":"Reply with {\"ok\":true}"}]}]' \
+  --inference-config '{"maxTokens":1024,"temperature":0}'
+```
+
+## Still blocked: Titan embeddings + Anthropic Claude
 
 As of 2026-07-23 on this account:
 
@@ -45,14 +64,15 @@ CLI attempts:
 - `put-use-case-for-model-access` → `ValidationException: Your account is not authorized to perform this action. Please create a support case...`
 - `create-foundation-model-agreement` → `AccessDeniedException: You have not filled out the request form`
 
-Until unlocked, keep:
+Until Titan unlocks, keep:
 
 ```env
 EMBEDDINGS_BACKEND=fake
-LLM_BACKEND=fake
 ```
 
-### Human steps to unlock
+### Optional: support case to unlock Titan/Claude
+
+Skip if Qwen-only is enough for the demo.
 
 1. Open [AWS Support Center](https://console.aws.amazon.com/support/home) (Account and billing cases are free; the Support API needs a paid plan).
 2. Create a case — prefer **Account and billing** if Service limit increase is unavailable on Free Plan.
@@ -60,10 +80,9 @@ LLM_BACKEND=fake
 4. After Support clears the restriction, open **Amazon Bedrock → Model access / Model catalog** in `us-east-1`.
 5. Submit the Anthropic first-time use (FTU) form in the console (or retry `put-use-case-for-model-access`).
 6. Accept the Claude marketplace agreement if prompted.
-7. Smoke test:
+7. Smoke test Titan via `invoke-model`:
 
 ```bash
-# Titan
 printf '%s' '{"inputText":"hello","dimensions":1024}' > /tmp/titan-in.json
 aws bedrock-runtime invoke-model \
   --region us-east-1 \
@@ -71,15 +90,8 @@ aws bedrock-runtime invoke-model \
   --content-type application/json --accept application/json \
   --body fileb:///tmp/titan-in.json /tmp/titan-out.json
 
-# Then flip backends in .env (do not commit .env)
+# Then flip embeddings backend in .env (do not commit .env)
 EMBEDDINGS_BACKEND=bedrock
-LLM_BACKEND=bedrock
-```
-
-Optional model override:
-
-```env
-BEDROCK_LLM_MODEL=anthropic.claude-haiku-4-5-20251001-v1:0
 ```
 
 #### Paste into the Support case
@@ -114,7 +126,7 @@ Expected volume is hackathon-scale smoke tests only (low RPM). Billing contact a
 
 For a dedicated IAM user or role later (not required while using root login for smoke):
 
-- `bedrock:InvokeModel` on the Titan + Claude model ARNs in `us-east-1`
+- `bedrock:InvokeModel` on the Qwen/Titan/Claude model ARNs in `us-east-1`
 - `s3:PutObject`, `s3:GetObject` on `arn:aws:s3:::sentinel-artifacts-951532862171-us-east-1/*`
 - For third-party Bedrock marketplace subscribe (Claude): `aws-marketplace:Subscribe`, `ViewSubscriptions`, `Unsubscribe`
 

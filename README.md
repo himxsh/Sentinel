@@ -4,7 +4,7 @@ Autonomous database-reliability agent using CockroachDB as persistent memory.
 
 ## Architecture (short)
 
-Alert → FastAPI agent loop → CockroachDB memory (incidents + audit events + vector knowledge). Demo UI is static HTML/CSS/JS served by the same FastAPI app (`src/sentinel/ui/`). Fake LLM/embeddings are the default until Bedrock unlocks.
+Alert → FastAPI agent loop → CockroachDB memory (incidents + audit events + vector knowledge). Demo UI is static HTML/CSS/JS served by the same FastAPI app (`src/sentinel/ui/`). Fake LLM/embeddings are the default; set `LLM_BACKEND=bedrock` for live Qwen3 Coder 480B, embeddings stay fake.
 
 ```
 Browser  →  /  /incidents  /incidents/{id}  (product UI)
@@ -22,11 +22,11 @@ flowchart LR
     Tools --> Skills[4 curated SQL skills]
     Agent --> PM[Postmortem]
     PM --> S3[(S3<br/>postmortems/)]
-    Agent -.-> Bedrock[Bedrock wrappers<br/>code path, not live]
+    Agent --> Bedrock[Bedrock<br/>live LLM — Qwen3 Coder 480B]
     Agent -.-> Lambda[Lambda handlers<br/>in repo, not deployed]
 ```
 
-Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` are the defaults and everything (recall, postmortems, tests) runs on them — no AWS needed until Bedrock unlocks.
+Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` are the defaults and everything (recall, postmortems, tests) runs on them — no AWS needed by default.
 
 ## CockroachDB tools
 
@@ -38,7 +38,7 @@ Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` ar
 ## AWS services
 
 - **S3** — postmortem markdown uploads to `sentinel-artifacts-951532862171-us-east-1` under `postmortems/{incident_id}.md` when `S3_BUCKET` is set. Soft-fails: upload errors never break the agent loop.
-- **Bedrock** — wrappers for Titan embeddings and Claude LLM exist (`embeddings.py`, `llm.py`) but are NOT live: this account's Bedrock access is blocked until Support unlocks quotas. `fake` backends are the default.
+- **Bedrock** — plan + postmortem run on live Qwen3 Coder 480B (`qwen.qwen3-coder-480b-a35b-v1:0`) via Converse when `LLM_BACKEND=bedrock` (`llm.py`). Embeddings remain fake: Titan is still blocked on this account, and Claude is not used.
 - **Lambda** — remediation handlers exist under `lambdas/` but are not deployed; local remediation (`REMEDIATE_MODE=local`) is the default.
 - **Containers** — Dockerfile at repo root; deploy notes in `infra/deploy.md`. Not deployed.
 
@@ -105,7 +105,7 @@ Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` ar
     .venv/bin/python scripts/demo_incident.py
     ```
 
-11. **AWS** — S3 bucket + Bedrock status: `infra/aws_setup.md`. Keep `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` until Bedrock quotas are non-zero. Container deploy path is ECS Express Mode (App Runner is sunset; see `infra/deploy.md` — Dockerfile at repo root, do not deploy without credentials).
+11. **AWS** — S3 bucket + Qwen LLM setup + blocked Titan status: `infra/aws_setup.md`. `fake` is the default backend; set `LLM_BACKEND=bedrock` for live Qwen. Container deploy path is ECS Express Mode (App Runner is sunset; see `infra/deploy.md` — Dockerfile at repo root, do not deploy without credentials).
 
 12. **Resilience check** (requires `DATABASE_URL`; connection-fault fallback for Basic clusters)
     ```
