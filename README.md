@@ -105,7 +105,7 @@ Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` ar
     .venv/bin/python scripts/demo_incident.py
     ```
 
-11. **AWS** — S3 bucket + Bedrock status: `infra/aws_setup.md`. Keep `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` until Bedrock quotas are non-zero. Container deploy notes: `infra/deploy.md` (Dockerfile at repo root — do not deploy without credentials).
+11. **AWS** — S3 bucket + Bedrock status: `infra/aws_setup.md`. Keep `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` until Bedrock quotas are non-zero. Container deploy path is ECS Express Mode (App Runner is sunset; see `infra/deploy.md` — Dockerfile at repo root, do not deploy without credentials).
 
 12. **Resilience check** (requires `DATABASE_URL`; connection-fault fallback for Basic clusters)
     ```
