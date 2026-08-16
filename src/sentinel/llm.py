@@ -20,7 +20,7 @@ def _fake_plan(context: dict) -> dict:
     memory_titles = " ".join(m.get("title", "") for m in memories).lower()
     haystack = signal_text + " " + memory_titles
 
-    # ponytail: keyword heuristic; swap to real LLM when Claude unlocks
+    # ponytail: keyword heuristic; swap to real LLM when Qwen becomes the default backend
     if any(kw in haystack for kw in ["runaway", "p99", "latency", "connection pool", "full table scan"]):
         hypothesis = "Unoptimized analytical query consuming all connections and exhausting the pool"
         actions = [
@@ -51,7 +51,7 @@ def _fake_plan(context: dict) -> dict:
 
 
 def _bedrock_plan(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer. Given an incident signal and relevant knowledge, "
         "return a JSON object with keys: hypothesis (str), actions (list of dicts with cmd/args/destructive), "
@@ -68,8 +68,20 @@ def _bedrock_plan(context: dict, settings) -> dict:
         inferenceConfig={"maxTokens": 1024, "temperature": 0},
     )
     text = resp["output"]["message"]["content"][0]["text"]
+    return _parse_json(text)
+
+
+def _parse_json(text: str):
     text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Qwen sometimes wraps JSON in prose; take the first { to the last }
+        first = text.find("{")
+        last = text.rfind("}")
+        if first != -1 and last > first:
+            return json.loads(text[first : last + 1])
+        raise
 
 
 def postmortem(context: dict) -> dict:
@@ -99,7 +111,7 @@ def _fake_postmortem(context: dict) -> dict:
 
 
 def _bedrock_postmortem(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer writing a postmortem. "
         "Return a JSON object with keys: title (str), content (str, markdown postmortem with "
@@ -121,5 +133,4 @@ def _bedrock_postmortem(context: dict, settings) -> dict:
         inferenceConfig={"maxTokens": 1024, "temperature": 0},
     )
     text = resp["output"]["message"]["content"][0]["text"]
-    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return json.loads(text)
+    return _parse_json(text)
