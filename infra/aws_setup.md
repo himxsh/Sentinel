@@ -29,27 +29,27 @@ aws sts get-caller-identity
 
 Prefer short-lived creds over long-lived access keys. Root is fine for hackathon smoke only.
 
-## Live: Qwen3 Coder 480B (plan + postmortem)
+## Live: Qwen3 Coder Next (plan + postmortem)
 
-`qwen.qwen3-coder-480b-a35b-v1:0` is **not** in the us-east-1 catalog; it is listed in `us-west-2` (also us-east-2, ap-south-1, eu-west-2). Bedrock traffic uses `us-west-2` while S3 stays in `us-east-1`. Set:
+`qwen.qwen3-coder-next` is in the **us-east-1** catalog only, so Bedrock traffic shares `us-east-1` with S3. Set:
 
 ```env
 LLM_BACKEND=bedrock
-BEDROCK_REGION=us-west-2
-BEDROCK_LLM_MODEL=qwen.qwen3-coder-480b-a35b-v1:0
+BEDROCK_REGION=us-east-1
+BEDROCK_LLM_MODEL=qwen.qwen3-coder-next
 ```
 
 Smoke test (Converse is what `src/sentinel/llm.py` uses):
 
 ```bash
 aws bedrock-runtime converse \
-  --region us-west-2 \
-  --model-id qwen.qwen3-coder-480b-a35b-v1:0 \
+  --region us-east-1 \
+  --model-id qwen.qwen3-coder-next \
   --messages '[{"role":"user","content":[{"text":"Reply with {\"ok\":true}"}]}]' \
   --inference-config '{"maxTokens":1024,"temperature":0}'
 ```
 
-As of 2026-08-16 on this account, `get-foundation-model-availability` reports `authorizationStatus: NOT_AUTHORIZED` for Qwen 480B, and Converse returns `ValidationException: Operation not allowed`. Invoke will not work until Qwen model access is enabled in the **Bedrock console → Model access** page for `us-west-2`.
+As of 2026-08-16 on this account, Converse returns `ValidationException: Operation not allowed` for coder-next (`authorizationStatus: NOT_AUTHORIZED` until console model access). Invoke will not work until Qwen model access is enabled in the **Bedrock console → Model access** page for `us-east-1`.
 
 ## Still blocked: Titan embeddings + Anthropic Claude
 
