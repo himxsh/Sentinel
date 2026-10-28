@@ -5,13 +5,17 @@ import { api } from "@/lib/api";
 import {
   ACTIVE_STATUSES,
   asRecord,
+  filedRunbook,
   fmtTs,
+  impactPreviews,
   kindLabel,
-  pendingApproval,
+  pendingGate,
+  recallHits,
   shortId,
   statusLabel,
+  type ImpactView,
 } from "@/lib/format";
-import type { Incident, IncidentEvent } from "@/lib/types";
+import type { Incident, IncidentEvent, ReplayBeat } from "@/lib/types";
 import { toast } from "@/components/ToastHost";
 
 function EventBody({ event }: { event: IncidentEvent }) {
@@ -29,7 +33,7 @@ function EventBody({ event }: { event: IncidentEvent }) {
   } else if (hypothesis) {
     summary = hypothesis;
   } else if (awaiting) {
-    summary = "A change needs your OK before it runs.";
+    summary = typeof detail?.reason === "string" ? detail.reason : "A change needs your OK before it runs.";
   } else if (approved) {
     summary = "Approved and recorded.";
   } else if (typeof detail?.summary === "string") {
@@ -47,10 +51,32 @@ function EventBody({ event }: { event: IncidentEvent }) {
   );
 }
 
+function dollars(value: number | null): string {
+  return value === null ? "n/a" : `$${value}`;
+}
+
+function ImpactFacts({ impact }: { impact: ImpactView }) {
+  return (
+    <article className="event">
+      <div className="event-head">
+        <span className="event-kind">{impact.cmd}</span>
+        <span>{impact.scope}</span>
+        <span>{dollars(impact.estimated_usd)}/month</span>
+        <span className={`risk-${impact.risk}`}>{impact.risk} risk</span>
+        <span>{impact.hold ? "Waits" : "Auto"}</span>
+      </div>
+      <p className="m-0">{impact.targets}</p>
+      <p className="mt-2 mb-0 text-ink-muted">{impact.hold ? impact.why_hold : "Clear to apply."}</p>
+    </article>
+  );
+}
+
 export function IncidentDetail({ id }: { id: string }) {
   const [incident, setIncident] = useState<Incident | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [approving, setApproving] = useState(false);
+  const [replayIndex, setReplayIndex] = useState(0);
+  const [playing, setPlaying] = useState(false);
 
   const refresh = useCallback(async () => {
     const next = await api<Incident>(`/api/incidents/${id}`);
@@ -61,9 +87,13 @@ export function IncidentDetail({ id }: { id: string }) {
   useEffect(() => {
     let timer: number | null = null;
     let source: EventSource | null = null;
+    let cancelled = false;
 
-    refresh()
-      .then((live) => {
+    api<Incident>(`/api/incidents/${id}`)
+      .then((next) => {
+        if (cancelled) return;
+        setIncident(next);
+        const live = ACTIVE_STATUSES.has(next.status);
         if (typeof EventSource !== "undefined") {
           source = new EventSource(`/api/incidents/${id}/stream`);
           source.onmessage = () => {
@@ -86,14 +116,28 @@ export function IncidentDetail({ id }: { id: string }) {
         }
       })
       .catch((caught) => {
+        if (cancelled) return;
         setError(caught instanceof Error ? caught.message : "Case not found.");
       });
 
     return () => {
+      cancelled = true;
       if (timer) window.clearInterval(timer);
       source?.close();
     };
   }, [id, refresh]);
+
+  const beats: ReplayBeat[] = incident?.replay ?? [];
+  const beatCount = beats.length;
+  const safeIndex = beatCount === 0 ? 0 : Math.min(replayIndex, beatCount - 1);
+
+  useEffect(() => {
+    if (!playing || beatCount === 0) return;
+    const timer = window.setInterval(() => {
+      setReplayIndex((current) => (current + 1) % beatCount);
+    }, 1600);
+    return () => window.clearInterval(timer);
+  }, [playing, beatCount]);
 
   async function approve() {
     setApproving(true);
@@ -131,7 +175,13 @@ export function IncidentDetail({ id }: { id: string }) {
   }
 
   const live = ACTIVE_STATUSES.has(incident.status);
-  const awaiting = pendingApproval(incident.events);
+  const gate = pendingGate(incident.events);
+  const hits = recallHits(incident.events);
+  const impacts = impactPreviews(incident.events);
+  const runbook = filedRunbook(incident.events);
+  const beat = beatCount ? beats[safeIndex] : undefined;
+  const approveCmd = typeof gate?.action.cmd === "string" ? gate.action.cmd : "this change";
+  const gateImpact = impacts.find((item) => item.cmd === approveCmd) ?? null;
 
   return (
     <>
@@ -163,14 +213,17 @@ export function IncidentDetail({ id }: { id: string }) {
             <strong>Severity.</strong> {incident.severity}
           </p>
           <p className="font-mono text-sm text-ink-muted">Updated {fmtTs(incident.updated_at)}</p>
-          {awaiting ? (
+          {gate ? (
             <div className="mt-4">
-              <button type="button" className="btn btn-ink" disabled={approving} onClick={approve}>
-                {approving ? "Recording…" : "Approve this change"}
+              <p className="m-0">{gate.reason || "A change needs your OK before it runs."}</p>
+              {gateImpact ? (
+                <p className="mt-2 font-mono text-sm text-ink-muted">
+                  {gateImpact.scope} blast · {dollars(gateImpact.estimated_usd)}/month · {gateImpact.risk} risk
+                </p>
+              ) : null}
+              <button type="button" className="btn btn-ink mt-3" disabled={approving} onClick={approve}>
+                {approving ? "Recording…" : `Approve ${approveCmd}`}
               </button>
-              <p className="mt-2 font-mono text-sm text-ink-muted">
-                {JSON.stringify(awaiting)}
-              </p>
             </div>
           ) : null}
         </section>
@@ -193,11 +246,118 @@ export function IncidentDetail({ id }: { id: string }) {
           )}
         </section>
 
+        {hits.length ? (
+          <section className="panel md:col-span-2" id="why-recalled">
+            <h2>Why these cases</h2>
+            <div className="grid gap-3">
+              {hits.map((hit) => (
+                <article key={hit.title} className="event">
+                  <div className="event-head">
+                    <span className="event-kind">{hit.band}</span>
+                    <span>{hit.source}</span>
+                  </div>
+                  <p className="m-0">
+                    <strong>{hit.title}</strong>
+                  </p>
+                  <p className="mt-2 mb-0">{hit.why}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {impacts.length ? (
+          <section className="panel md:col-span-2" id="blast-radius">
+            <h2>Blast radius</h2>
+            <p className="mt-0 text-ink-muted">Priced before anything runs. The numbers are a rate card, not an invoice.</p>
+            <div className="grid gap-3">
+              {impacts.map((impact) => (
+                <ImpactFacts key={impact.cmd} impact={impact} />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {runbook ? (
+          <section className="panel md:col-span-2" id="runbook-filed">
+            <h2>Runbook</h2>
+            <p className="mt-0">
+              <strong>{runbook.title}</strong>
+            </p>
+            <ol className="m-0 grid list-decimal gap-2 pl-5">
+              {runbook.steps.map((step) => (
+                <li key={`${step.status}-${step.cmd}`}>
+                  <span className={step.status === "applied" ? "step-applied" : "step-held"}>
+                    {step.status === "applied" ? "Applied. " : "Held. "}
+                  </span>
+                  {step.do}
+                </li>
+              ))}
+            </ol>
+            {runbook.checks.length ? (
+              <p className="text-ink-muted">Check: {runbook.checks.join(" ")}</p>
+            ) : null}
+            {runbook.rollback.length ? <p className="text-ink-muted">Undo: {runbook.rollback.join(" ")}</p> : null}
+            {runbook.markdown ? (
+              <details className="mt-2">
+                <summary className="cursor-pointer font-mono text-[0.75rem] text-ink-muted">Markdown</summary>
+                <pre data-lenis-prevent>{runbook.markdown}</pre>
+              </details>
+            ) : null}
+          </section>
+        ) : null}
+
+        {beat ? (
+          <section className="panel md:col-span-2" id="replay" aria-label="Replay the night">
+            <h2>Replay the night</h2>
+            <p id="replay-narration" className="beat" aria-live="polite">
+              {beat.narration}
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setPlaying(false);
+                  setReplayIndex((current) => (current - 1 + beatCount) % beatCount);
+                }}
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                id="replay-play"
+                className="btn btn-ink"
+                aria-pressed={playing}
+                onClick={() => setPlaying((current) => !current)}
+              >
+                {playing ? "Pause" : "Play"}
+              </button>
+              <button
+                type="button"
+                className="btn btn-ghost"
+                onClick={() => {
+                  setPlaying(false);
+                  setReplayIndex((current) => (current + 1) % beatCount);
+                }}
+              >
+                Next
+              </button>
+              <span className="meta">
+                {safeIndex + 1} / {beatCount} · {beat.label}
+              </span>
+            </div>
+          </section>
+        ) : null}
+
         <section className="panel md:col-span-2">
           <h2>Audit timeline</h2>
           {incident.events?.length ? (
             incident.events.map((event, index) => (
-              <article className="event" key={event.id ?? `${event.ts}-${index}`}>
+              <article
+                className={beat && index === safeIndex ? "event is-current" : "event"}
+                key={event.id ?? `${event.ts}-${index}`}
+              >
                 <div className="event-head">
                   <span className="event-kind">{kindLabel(event.kind)}</span>
                   <span>{event.actor}</span>

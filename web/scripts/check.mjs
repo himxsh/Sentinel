@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { createRequire } from "node:module";
-import { pendingApproval, shortId, statusLabel } from "../lib/format.ts";
+import { filedRunbook, impactPreviews, pendingApproval, pendingGate, recallHits, shortId, statusLabel } from "../lib/format.ts";
 
 assert.ok(createRequire(import.meta.url).resolve("lenis/react"));
 
@@ -22,5 +22,43 @@ assert.deepEqual(
   ]),
   { op: "kill" },
 );
+assert.equal(
+  pendingGate([
+    { actor: "agent", kind: "approval", detail: { awaiting: { cmd: "scatter_range" }, reason: "wide" }, ts: "1" },
+    { actor: "agent", kind: "approval", detail: { awaiting: { cmd: "enable_random_uuids" }, reason: "keys" }, ts: "2" },
+    { actor: "user", kind: "approval", detail: { approved: { cmd: "enable_random_uuids" } }, ts: "3" },
+  ])?.action.cmd,
+  "scatter_range",
+);
+
+const story = [
+  {
+    actor: "agent",
+    kind: "observation",
+    detail: { recalled: [{ title: "Hot range", source: "runbook", band: "near", why: "Shares range." }] },
+    ts: "1",
+  },
+  {
+    actor: "agent",
+    kind: "observation",
+    detail: { impact: { cmd: "scatter_range", scope: "cluster", targets: "ranges", estimated_ru: 250000, estimated_usd: 42, risk: "high", hold: true, why_hold: "cluster-wide" } },
+    ts: "2",
+  },
+  {
+    actor: "agent",
+    kind: "observation",
+    detail: {
+      title: "Runbook: Hot range",
+      steps: [{ cmd: "scatter_range", status: "held", do: "Scatter it." }],
+      checks: ["Watch QPS."],
+      rollback: ["Leave it."],
+      markdown: "# Runbook",
+    },
+    ts: "3",
+  },
+];
+assert.equal(recallHits(story)[0].why, "Shares range.");
+assert.equal(impactPreviews(story)[0].estimated_usd, 42);
+assert.equal(filedRunbook(story)?.steps[0].status, "held");
 
 console.log("web/lib/format.ts ok");

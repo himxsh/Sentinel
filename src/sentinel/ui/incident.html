@@ -43,6 +43,29 @@
         <h2>Memory outcome</h2>
         <p id="memoryBody" class="empty">Hypothesis and postmortem appear as the agent writes them.</p>
       </section>
+      <section class="panel timeline-wrap" id="recallPanel" hidden>
+        <h2>Why these cases</h2>
+        <div id="recallBody"></div>
+      </section>
+      <section class="panel timeline-wrap" id="impactPanel" hidden>
+        <h2>Blast radius</h2>
+        <p class="muted">Priced before anything runs. The numbers are a rate card, not an invoice.</p>
+        <div id="impactBody"></div>
+      </section>
+      <section class="panel timeline-wrap" id="runbookPanel" hidden>
+        <h2>Runbook</h2>
+        <div id="runbookBody"></div>
+      </section>
+      <section class="panel timeline-wrap" id="replayPanel" hidden>
+        <h2>Replay the night</h2>
+        <p id="replayNarration"></p>
+        <div class="meta">
+          <button type="button" class="btn btn-ghost" id="replayPrev">Back</button>
+          <button type="button" class="btn btn-primary" id="replayToggle">Play</button>
+          <button type="button" class="btn btn-ghost" id="replayNext">Next</button>
+          <span id="replayCount"></span>
+        </div>
+      </section>
       <section class="panel timeline-wrap">
         <h2>Audit timeline</h2>
         <div class="timeline" id="timeline"></div>
@@ -52,13 +75,69 @@
   <script src="/static/app.js"></script>
   <script>
     const {
-      api, esc, fmtTs, shortId, pendingApproval, renderEvents, toast
+      api, esc, fmtTs, shortId, pendingGate, renderEvents, renderStory, toast
     } = SentinelUI;
 
     const id = location.pathname.split("/").filter(Boolean).pop();
     const ACTIVE = new Set(["open", "diagnosing", "remediating"]);
     let pollTimer = null;
     let lastEventCount = -1;
+    let beats = [];
+    let replayIndex = 0;
+    let replayTimer = null;
+
+    function paintReplay() {
+      const panel = document.getElementById("replayPanel");
+      if (!beats.length) {
+        panel.hidden = true;
+        return;
+      }
+      panel.hidden = false;
+      if (replayIndex >= beats.length) replayIndex = beats.length - 1;
+      const beat = beats[replayIndex];
+      document.getElementById("replayNarration").textContent = beat.narration;
+      document.getElementById("replayCount").textContent = `${replayIndex + 1} / ${beats.length} · ${beat.label}`;
+      document.querySelectorAll("#timeline .event").forEach((el, index) => {
+        el.classList.toggle("is-current", index === replayIndex);
+      });
+    }
+
+    function setBeats(next) {
+      beats = next || [];
+      if (replayIndex >= beats.length) replayIndex = Math.max(0, beats.length - 1);
+      paintReplay();
+    }
+
+    document.getElementById("replayPrev").onclick = () => {
+      if (!beats.length) return;
+      stopReplay();
+      replayIndex = (replayIndex - 1 + beats.length) % beats.length;
+      paintReplay();
+    };
+    document.getElementById("replayNext").onclick = () => {
+      if (!beats.length) return;
+      stopReplay();
+      replayIndex = (replayIndex + 1) % beats.length;
+      paintReplay();
+    };
+    document.getElementById("replayToggle").onclick = () => {
+      if (!beats.length) return;
+      if (replayTimer) stopReplay();
+      else {
+        replayTimer = setInterval(() => {
+          replayIndex = (replayIndex + 1) % beats.length;
+          paintReplay();
+        }, 1600);
+        document.getElementById("replayToggle").textContent = "Pause";
+      }
+    };
+
+    function stopReplay() {
+      if (replayTimer) clearInterval(replayTimer);
+      replayTimer = null;
+      const toggle = document.getElementById("replayToggle");
+      if (toggle) toggle.textContent = "Play";
+    }
 
     async function approve() {
       try {
@@ -99,22 +178,26 @@
         ? mem.join("")
         : `<p class="empty">Waiting for hypothesis and postmortem…</p>`;
 
-      const awaiting = pendingApproval(i.events);
+      const gate = pendingGate(i.events);
       const area = document.getElementById("approveArea");
-      if (awaiting) {
+      if (gate) {
+        const cmd = gate.action && gate.action.cmd ? gate.action.cmd : "this change";
+        const reason = gate.reason || "A change needs your OK before it runs.";
         area.innerHTML =
-          `<button type="button" class="btn btn-primary" id="approveBtn">Approve destructive action</button>` +
-          `<p class="muted mono" style="margin-top:0.5rem">${esc(JSON.stringify(awaiting))}</p>`;
+          `<p>${esc(reason)}</p>` +
+          `<button type="button" class="btn btn-primary" id="approveBtn">Approve ${esc(cmd)}</button>`;
         document.getElementById("approveBtn").onclick = approve;
       } else {
         area.innerHTML = "";
       }
 
+      renderStory(i);
       const events = i.events || [];
       if (events.length !== lastEventCount) {
         renderEvents(document.getElementById("timeline"), events);
         lastEventCount = events.length;
       }
+      setBeats(i.replay || []);
 
       const live = ACTIVE.has(i.status);
       document.getElementById("liveDot").classList.toggle("off", !live);

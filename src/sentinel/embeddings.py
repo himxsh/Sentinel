@@ -22,7 +22,7 @@ def _fake_embed(text: str) -> list[float]:
 
 
 def _bedrock_embed(text: str, settings) -> list[float]:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     body = json.dumps({"inputText": text, "dimensions": 1024})
     resp = client.invoke_model(
         modelId=settings.bedrock_embed_model,

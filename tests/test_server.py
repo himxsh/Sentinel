@@ -178,4 +178,8 @@ class _Cursor:
         return self.row
 
     def fetchall(self):
-        return self._rows
+        if self._rows:
+            return self._rows
+        if self.row is not None:
+            return [self.row]
+        return []

@@ -4,6 +4,7 @@ import { FireAlertButton } from "@/components/FireAlertButton";
 import { Header } from "@/components/Header";
 import { api } from "@/lib/api";
 import { DEMO_FACTS, GUARDS, MEMORY, STEPS } from "@/lib/copy";
+import { HOT_RANGE_SIGNAL } from "@/lib/format";
 import { fmtTs, shortId, statusLabel } from "@/lib/format";
 import type { IncidentSummary } from "@/lib/types";
 
@@ -31,7 +32,13 @@ export default async function Home() {
             When a database gets sick, Sentinel opens a case, checks what worked last time, and files what it did.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <FireAlertButton />
+            <FireAlertButton id="fire-demo" />
+            <FireAlertButton
+              id="fire-hot-range"
+              signal={HOT_RANGE_SIGNAL}
+              label="Fire a hot-range alert"
+              className="btn btn-ghost"
+            />
             <Link className="btn btn-ghost" href="/incidents">
               Cases
             </Link>

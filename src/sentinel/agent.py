@@ -1,5 +1,6 @@
 from sentinel.embeddings import embed
 from sentinel import llm
+from sentinel.impact import estimate_impact, needs_approval
 from sentinel.memory import (
     end_agent_run,
     log_event,
@@ -12,6 +13,8 @@ from sentinel.memory import (
     vector_recall,
 )
 from sentinel.postmortem import write_postmortem
+from sentinel.recall import explain_matches
+from sentinel.runbook import save_runbook
 from sentinel.tools.ccloud import control_plane
 from sentinel.tools.mcp_read import diagnose
 from sentinel.tools.remediate import remediate
@@ -33,8 +36,10 @@ def handle_alert(conn, signal: dict) -> dict:
     try:
         emb = embed(str(signal))
         memories = vector_recall(conn, emb, k=5)
+        explained = explain_matches(signal, memories)
         log_event(conn, incident_id, "agent", "observation", {
             "recalled_titles": [m["title"] for m in memories],
+            "recalled": explained,
         })
 
         set_status(conn, incident_id, "diagnosing")
@@ -62,14 +67,29 @@ def handle_alert(conn, signal: dict) -> dict:
 
         set_status(conn, incident_id, "remediating")
 
+        executed = []
+        held = []
         for action in plan["actions"]:
-            if action.get("destructive"):
-                log_event(conn, incident_id, "agent", "approval", {"awaiting": action})
-                continue
             dry = timed_tool(conn, run_id, "remediate", {**action, "dry_run": True}, lambda a=action: remediate(a, dry_run=True))
-            log_event(conn, incident_id, "agent", "observation", {"dry_run": dry})
+            impact = estimate_impact(action)
+            if isinstance(dry, dict):
+                dry = {**dry, "impact": impact}
+            log_event(conn, incident_id, "agent", "observation", {"dry_run": dry, "impact": impact})
+            dry_ok = bool(isinstance(dry, dict) and dry.get("ok"))
+            hold, reason = needs_approval(action, impact, dry_ok=dry_ok)
+            if hold:
+                held.append({**action, "impact": impact})
+                log_event(conn, incident_id, "agent", "approval", {
+                    "awaiting": action,
+                    "impact": impact,
+                    "reason": reason,
+                })
+                continue
             result = timed_tool(conn, run_id, "remediate", {**action, "dry_run": False}, lambda a=action: remediate(a, dry_run=False, approved=False))
             record_action(conn, incident_id, {**action, "result": result}, destructive=False)
+            executed.append({**action, "impact": impact, "result": result})
+
+        runbook = save_runbook(conn, incident_id, signal, plan, executed, held)
 
         pm_context = {
             "signal": signal,
@@ -77,6 +97,8 @@ def handle_alert(conn, signal: dict) -> dict:
             "plan": plan,
             "live": live,
             "skills": skills,
+            "executed": [step.get("cmd") for step in executed],
+            "held": [step.get("cmd") for step in held],
         }
         pm_result = timed_tool(conn, run_id, "write_postmortem", {"incident_id": incident_id}, lambda: write_postmortem(conn, incident_id, pm_context))
 
@@ -89,6 +111,12 @@ def handle_alert(conn, signal: dict) -> dict:
             "status": "resolved",
             "hypothesis": plan["hypothesis"],
             "recalled": [m["title"] for m in memories],
+            "explanations": explained,
+            "runbook": {
+                "title": runbook["title"],
+                "knowledge_id": runbook["knowledge_id"],
+                "steps": runbook["steps"],
+            },
             "plan": plan,
             "knowledge_id": pm_result["knowledge_id"],
         }

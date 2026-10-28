@@ -14,11 +14,17 @@ export type IncidentEvent = {
   ts: string | null;
 };
 
+export type ReplayBeat = {
+  label: string;
+  narration: string;
+};
+
 export type Incident = IncidentSummary & {
   hypothesis: string | null;
   resolution: string | null;
   updated_at: string | null;
   events: IncidentEvent[];
+  replay?: ReplayBeat[];
 };
 
 export type AlertResult = {

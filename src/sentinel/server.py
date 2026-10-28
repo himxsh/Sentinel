@@ -7,7 +7,9 @@ from fastapi.staticfiles import StaticFiles
 
 from sentinel.agent import handle_alert
 from sentinel.db import execute
+from sentinel.impact import pending_action
 from sentinel.memory import log_event, record_action
+from sentinel.replay import replay_beats
 from sentinel.tools.remediate import remediate
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -79,6 +81,7 @@ def get_incident(incident_id: str):
             }
             for e in cur2.fetchall()
         ]
+        incident["replay"] = replay_beats(incident["events"])
         return incident
 
     result = execute(_q)
@@ -95,19 +98,21 @@ def approve_action(incident_id: str, body: dict = Body(default={})):
         cur = conn.execute(
             "SELECT id, detail FROM incident_events "
             "WHERE incident_id = %s AND kind = 'approval' "
-            "ORDER BY ts DESC LIMIT 1",
+            "ORDER BY ts ASC",
             (incident_id,),
         )
-        row = cur.fetchone()
-        if not row:
+        details = []
+        for row in cur.fetchall():
+            raw = row[1]
+            details.append(json.loads(raw) if isinstance(raw, str) else raw)
+        awaiting = pending_action(details)
+        if not awaiting:
             raise ValueError("no pending approval for this incident")
 
-        detail = json.loads(row[1]) if isinstance(row[1], str) else row[1]
-        awaiting = detail.get("awaiting", {})
-
-        log_event(conn, incident_id, "user", "approval", {"approved": action or awaiting})
-        result = remediate(action or awaiting, dry_run=False, approved=True)
-        record_action(conn, incident_id, {**(action or awaiting), "result": result}, destructive=True)
+        chosen = action or awaiting
+        log_event(conn, incident_id, "user", "approval", {"approved": chosen})
+        result = remediate(chosen, dry_run=False, approved=True)
+        record_action(conn, incident_id, {**chosen, "result": result}, destructive=True)
         return {"approved": True, "result": result}
 
     try:

@@ -7,7 +7,17 @@ import { DEMO_SIGNAL } from "@/lib/format";
 import type { AlertResult } from "@/lib/types";
 import { toast } from "@/components/ToastHost";
 
-export function FireAlertButton() {
+export function FireAlertButton({
+  signal = DEMO_SIGNAL,
+  label = "Fire a demo alert",
+  className = "btn btn-signal",
+  id,
+}: {
+  signal?: Record<string, unknown>;
+  label?: string;
+  className?: string;
+  id?: string;
+}) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
@@ -17,7 +27,7 @@ export function FireAlertButton() {
       const data = await api<AlertResult>("/api/alerts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(DEMO_SIGNAL),
+        body: JSON.stringify(signal),
       });
       toast("Case opened. Opening it now.");
       router.push(data.incident_id ? `/incidents/${data.incident_id}` : "/incidents");
@@ -29,8 +39,8 @@ export function FireAlertButton() {
   }
 
   return (
-    <button type="button" className="btn btn-signal" disabled={busy} onClick={onClick}>
-      {busy ? "Working through the case…" : "Fire a demo alert"}
+    <button type="button" id={id} className={className} disabled={busy} onClick={onClick}>
+      {busy ? "Working through the case…" : label}
     </button>
   );
 }

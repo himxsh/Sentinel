@@ -48,6 +48,9 @@ class _FakeConn:
         if "FROM knowledge" in sql and "ORDER BY embedding" in sql:
             return _Cursor(None, _KNOWLEDGE_ROWS)
 
+        if "INSERT INTO knowledge" in sql:
+            return _Cursor(_Row(["rb-test-1"]))
+
         if "UPDATE incidents SET" in sql and params:
             if "hypothesis" in sql:
                 self.hypothesis = params[0]
@@ -116,6 +119,47 @@ def test_agent_loop_end_to_end(monkeypatch):
     assert conn.hypothesis is not None
     assert conn.resolution == "PM Summary"
     assert result["knowledge_id"] == "pm-1"
+    assert result["explanations"]
+    assert any("latency" in item["why"] for item in result["explanations"])
+    assert result["runbook"]["knowledge_id"] == "rb-test-1"
+    assert any(step["status"] == "applied" for step in result["runbook"]["steps"])
 
     assert "diagnose" in tool_calls_logged, f"diagnose not logged in {tool_calls_logged}"
     assert "llm.plan" in tool_calls_logged, f"llm.plan not logged in {tool_calls_logged}"
+
+
+def test_hot_range_held_for_blast_radius(monkeypatch):
+    monkeypatch.setattr("sentinel.agent.diagnose", lambda signal: {"ping": {"ok": True}})
+    monkeypatch.setattr("sentinel.agent.control_plane", lambda signal=None: {"ok": True})
+    monkeypatch.setattr("sentinel.agent.run_skills", lambda signal: {})
+    monkeypatch.setattr(
+        "sentinel.agent.write_postmortem",
+        lambda conn, incident_id, ctx: {
+            "title": "PM", "content": "c", "summary": "PM Summary", "knowledge_id": "pm-1",
+        },
+    )
+    monkeypatch.setattr("sentinel.agent.start_agent_run", lambda conn, incident_id=None: "run-test-1")
+    monkeypatch.setattr("sentinel.agent.end_agent_run", lambda conn, run_id, status="done": None)
+    monkeypatch.setattr("sentinel.memory.log_tool_call", lambda *a, **k: None)
+
+    calls = []
+
+    def spy(action, **kw):
+        calls.append((action.get("cmd"), kw.get("dry_run")))
+        return {"ok": True, "dry_run": kw.get("dry_run"), "would_execute": action}
+
+    monkeypatch.setattr("sentinel.agent.remediate", spy)
+
+    result = handle_alert(_FakeConn(), {
+        "title": "Hot range imbalance on orders primary key",
+        "severity": "P1",
+        "cluster_ref": "kooky-efreet",
+        "details": {"metric": "qps_imbalance", "value": 10},
+    })
+
+    assert result["status"] == "resolved"
+    assert ("scatter_range", True) in calls
+    assert ("scatter_range", False) not in calls
+    assert ("enable_random_uuids", False) not in calls
+    assert all(step["status"] == "held" for step in result["runbook"]["steps"])
+    assert {step["cmd"] for step in result["runbook"]["steps"]} == {"scatter_range", "enable_random_uuids"}

@@ -18,24 +18,34 @@ def _fake_plan(context: dict) -> dict:
 
     signal_text = str(signal).lower()
     memory_titles = " ".join(m.get("title", "") for m in memories).lower()
-    haystack = signal_text + " " + memory_titles
 
-    # ponytail: keyword heuristic; swap to real LLM when Claude unlocks
-    if any(kw in haystack for kw in ["runaway", "p99", "latency", "connection pool", "full table scan"]):
+    # ponytail: keyword heuristic; the alert wins, memories only fill an unclassified signal.
+    # Swap to real LLM when Qwen becomes the default backend.
+    def _kind(text: str) -> str:
+        if any(kw in text for kw in ["runaway", "p99", "latency", "connection pool", "full table scan"]):
+            return "latency"
+        if any(kw in text for kw in ["hot range", "imbalance", "scatter"]):
+            return "hot"
+        if any(kw in text for kw in ["node down", "failure", "dead node", "under-replicated"]):
+            return "node"
+        return ""
+
+    kind = _kind(signal_text) or _kind(memory_titles)
+    if kind == "latency":
         hypothesis = "Unoptimized analytical query consuming all connections and exhausting the pool"
         actions = [
             {"cmd": "cancel_query", "args": {"query_pattern": "full table scan"}, "destructive": False},
             {"cmd": "recommend_index", "args": {"table": "orders", "columns": ["status", "created_at"]}, "destructive": False},
         ]
         summary = "Cancelled runaway query, recommended covering index on orders(status, created_at)"
-    elif any(kw in haystack for kw in ["hot range", "imbalance", "scatter"]):
+    elif kind == "hot":
         hypothesis = "Sequential UUIDs caused hot range with 10x QPS imbalance"
         actions = [
             {"cmd": "scatter_range", "args": {}, "destructive": False},
             {"cmd": "enable_random_uuids", "args": {}, "destructive": False},
         ]
         summary = "Scattered hot range, switched to random UUIDs to prevent recurrence"
-    elif any(kw in haystack for kw in ["node down", "failure", "dead node", "under-replicated"]):
+    elif kind == "node":
         hypothesis = "Single node failure from hardware error, ranges under-replicated"
         actions = [
             {"cmd": "decommission_node", "args": {"node_id": ""}, "destructive": True},
@@ -51,7 +61,7 @@ def _fake_plan(context: dict) -> dict:
 
 
 def _bedrock_plan(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer. Given an incident signal and relevant knowledge, "
         "return a JSON object with keys: hypothesis (str), actions (list of dicts with cmd/args/destructive), "
@@ -68,8 +78,20 @@ def _bedrock_plan(context: dict, settings) -> dict:
         inferenceConfig={"maxTokens": 1024, "temperature": 0},
     )
     text = resp["output"]["message"]["content"][0]["text"]
+    return _parse_json(text)
+
+
+def _parse_json(text: str):
     text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        # Qwen sometimes wraps JSON in prose; take the first { to the last }
+        first = text.find("{")
+        last = text.rfind("}")
+        if first != -1 and last > first:
+            return json.loads(text[first : last + 1])
+        raise
 
 
 def postmortem(context: dict) -> dict:
@@ -99,7 +121,7 @@ def _fake_postmortem(context: dict) -> dict:
 
 
 def _bedrock_postmortem(context: dict, settings) -> dict:
-    client = boto3.client("bedrock-runtime", region_name=settings.aws_region)
+    client = boto3.client("bedrock-runtime", region_name=settings.bedrock_region)
     system_prompt = (
         "You are a database reliability engineer writing a postmortem. "
         "Return a JSON object with keys: title (str), content (str, markdown postmortem with "
@@ -121,5 +143,4 @@ def _bedrock_postmortem(context: dict, settings) -> dict:
         inferenceConfig={"maxTokens": 1024, "temperature": 0},
     )
     text = resp["output"]["message"]["content"][0]["text"]
-    text = text.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
-    return json.loads(text)
+    return _parse_json(text)
