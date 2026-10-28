@@ -63,6 +63,10 @@ def check_live_loop(client: TestClient) -> None:
     assert detail.status_code == 200
     inc = detail.json()
     assert len(inc.get("events") or []) > 0, "timeline empty"
+    assert inc.get("replay"), "expected replay beats"
+    assert any(isinstance(e.get("detail"), dict) and "recalled" in e["detail"] for e in inc["events"])
+    assert any(isinstance(e.get("detail"), dict) and e["detail"].get("impact") for e in inc["events"])
+    assert any(isinstance(e.get("detail"), dict) and e["detail"].get("steps") for e in inc["events"])
     assert inc.get("resolution"), "expected postmortem/resolution"
     assert len(inc["resolution"]) > 10
 

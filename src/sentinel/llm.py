@@ -18,24 +18,34 @@ def _fake_plan(context: dict) -> dict:
 
     signal_text = str(signal).lower()
     memory_titles = " ".join(m.get("title", "") for m in memories).lower()
-    haystack = signal_text + " " + memory_titles
 
-    # ponytail: keyword heuristic; swap to real LLM when Qwen becomes the default backend
-    if any(kw in haystack for kw in ["runaway", "p99", "latency", "connection pool", "full table scan"]):
+    # ponytail: keyword heuristic; the alert wins, memories only fill an unclassified signal.
+    # Swap to real LLM when Qwen becomes the default backend.
+    def _kind(text: str) -> str:
+        if any(kw in text for kw in ["runaway", "p99", "latency", "connection pool", "full table scan"]):
+            return "latency"
+        if any(kw in text for kw in ["hot range", "imbalance", "scatter"]):
+            return "hot"
+        if any(kw in text for kw in ["node down", "failure", "dead node", "under-replicated"]):
+            return "node"
+        return ""
+
+    kind = _kind(signal_text) or _kind(memory_titles)
+    if kind == "latency":
         hypothesis = "Unoptimized analytical query consuming all connections and exhausting the pool"
         actions = [
             {"cmd": "cancel_query", "args": {"query_pattern": "full table scan"}, "destructive": False},
             {"cmd": "recommend_index", "args": {"table": "orders", "columns": ["status", "created_at"]}, "destructive": False},
         ]
         summary = "Cancelled runaway query, recommended covering index on orders(status, created_at)"
-    elif any(kw in haystack for kw in ["hot range", "imbalance", "scatter"]):
+    elif kind == "hot":
         hypothesis = "Sequential UUIDs caused hot range with 10x QPS imbalance"
         actions = [
             {"cmd": "scatter_range", "args": {}, "destructive": False},
             {"cmd": "enable_random_uuids", "args": {}, "destructive": False},
         ]
         summary = "Scattered hot range, switched to random UUIDs to prevent recurrence"
-    elif any(kw in haystack for kw in ["node down", "failure", "dead node", "under-replicated"]):
+    elif kind == "node":
         hypothesis = "Single node failure from hardware error, ranges under-replicated"
         actions = [
             {"cmd": "decommission_node", "args": {"node_id": ""}, "destructive": True},
