@@ -1,5 +1,7 @@
 # Sentinel
 
+[![CI](https://github.com/himxsh/Sentinel/actions/workflows/ci.yml/badge.svg)](https://github.com/himxsh/Sentinel/actions/workflows/ci.yml)
+
 Autonomous database-reliability agent using CockroachDB as persistent memory.
 
 ## Architecture (short)

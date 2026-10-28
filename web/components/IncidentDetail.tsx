@@ -61,9 +61,13 @@ export function IncidentDetail({ id }: { id: string }) {
   useEffect(() => {
     let timer: number | null = null;
     let source: EventSource | null = null;
+    let cancelled = false;
 
-    refresh()
-      .then((live) => {
+    api<Incident>(`/api/incidents/${id}`)
+      .then((next) => {
+        if (cancelled) return;
+        setIncident(next);
+        const live = ACTIVE_STATUSES.has(next.status);
         if (typeof EventSource !== "undefined") {
           source = new EventSource(`/api/incidents/${id}/stream`);
           source.onmessage = () => {
@@ -86,10 +90,12 @@ export function IncidentDetail({ id }: { id: string }) {
         }
       })
       .catch((caught) => {
+        if (cancelled) return;
         setError(caught instanceof Error ? caught.message : "Case not found.");
       });
 
     return () => {
+      cancelled = true;
       if (timer) window.clearInterval(timer);
       source?.close();
     };
