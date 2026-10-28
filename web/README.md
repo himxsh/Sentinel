@@ -24,6 +24,6 @@ Open http://localhost:3000
 - `/` fire a demo alert
 - `/how` what the loop does, in order
 - `/incidents` case list
-- `/incidents/[id]` case, conclusion, audit timeline, approve if needed
+- `/incidents/[id]` case, conclusion, why a past case matched, blast radius, runbook, replay, audit timeline, approve if needed
 
 The Next server proxies `/api/*` to `SENTINEL_API_URL` (default `http://127.0.0.1:8000`).

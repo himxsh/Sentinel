@@ -89,6 +89,8 @@ Fake backends are first-class: `EMBEDDINGS_BACKEND=fake` / `LLM_BACKEND=fake` ar
    ```
    Open http://localhost:3000. It proxies `/api/*` to the FastAPI agent. See `web/README.md`.
 
+   Replay, recall explanations, blast-radius holds, and generated runbooks: `FEATURES.md`.
+
 8. **Offline tests** (no DB required)
    ```
    .venv/bin/pytest tests/ -v
