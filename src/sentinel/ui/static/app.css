@@ -284,6 +284,11 @@ a:hover { color: var(--ink); }
   animation: fade-in 0.35s var(--ease) both;
 }
 
+.event.is-current {
+  background: rgba(31, 111, 120, 0.12);
+  outline: 1px solid var(--signal);
+}
+
 .event-head {
   display: flex;
   flex-wrap: wrap;

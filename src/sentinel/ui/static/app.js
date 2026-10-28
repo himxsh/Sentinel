@@ -10,6 +10,18 @@ const DEMO_SIGNAL = {
   },
 };
 
+const HOT_RANGE_SIGNAL = {
+  title: "Hot range imbalance on orders primary key",
+  severity: "P1",
+  cluster_ref: "kooky-efreet",
+  details: {
+    metric: "qps_imbalance",
+    value: 10,
+    unit: "times",
+    table: "orders",
+  },
+};
+
 function esc(s) {
   const d = document.createElement("div");
   d.textContent = s == null ? "" : String(s);
@@ -57,7 +69,8 @@ async function api(path, opts) {
   return data;
 }
 
-async function fireDemoAlert(btn) {
+async function fireAlert(btn, signal, idleLabel) {
+  const label = idleLabel || "Fire demo alert";
   if (btn) {
     btn.disabled = true;
     btn.textContent = "Firing…";
@@ -66,7 +79,7 @@ async function fireDemoAlert(btn) {
     const data = await api("/api/alerts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(DEMO_SIGNAL),
+      body: JSON.stringify(signal || DEMO_SIGNAL),
     });
     toast("Alert ingested — opening incident");
     if (data.incident_id) {
@@ -81,20 +94,127 @@ async function fireDemoAlert(btn) {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "Fire demo alert";
+      btn.textContent = label;
     }
   }
 }
 
-function pendingApproval(events) {
+function fireDemoAlert(btn) {
+  return fireAlert(btn, DEMO_SIGNAL, "Fire demo alert");
+}
+
+function fireHotRangeAlert(btn) {
+  return fireAlert(btn, HOT_RANGE_SIGNAL, "Fire hot-range alert");
+}
+
+function pendingGate(events) {
   if (!events || !events.length) return null;
-  for (let i = events.length - 1; i >= 0; i--) {
-    const e = events[i];
-    if (e.kind === "approval" && e.detail && e.detail.awaiting && !e.detail.approved) {
-      return e.detail.awaiting;
-    }
+  const approved = new Set();
+  const details = [];
+  events.forEach((event) => {
+    if (event.kind !== "approval" || !event.detail || typeof event.detail !== "object") return;
+    details.push(event.detail);
+    const body = event.detail.approved;
+    if (body && typeof body === "object") approved.add(body.cmd || "*");
+    else if (body) approved.add("*");
+  });
+  if (approved.has("*")) return null;
+  for (const detail of details) {
+    const awaiting = detail.awaiting;
+    if (!awaiting || typeof awaiting !== "object") continue;
+    if (awaiting.cmd && approved.has(awaiting.cmd)) continue;
+    return { action: awaiting, reason: detail.reason || "", impact: detail.impact || null };
   }
   return null;
+}
+
+function pendingApproval(events) {
+  const gate = pendingGate(events);
+  return gate ? gate.action : null;
+}
+
+function storyFrom(events) {
+  let hits = [];
+  const impacts = [];
+  const seen = new Set();
+  let runbook = null;
+  (events || []).forEach((event) => {
+    const detail = event.detail || {};
+    if (!hits.length && Array.isArray(detail.recalled) && detail.recalled.length) {
+      hits = detail.recalled.filter((row) => row && row.why);
+    }
+    const impact = detail.impact || (detail.dry_run && detail.dry_run.impact);
+    if (impact && impact.cmd && !seen.has(impact.cmd)) {
+      seen.add(impact.cmd);
+      impacts.push(impact);
+    }
+    if (typeof detail.title === "string" && Array.isArray(detail.steps)) runbook = detail;
+  });
+  return { hits, impacts, runbook };
+}
+
+function fillPanel(panelId, bodyId, html) {
+  const panel = document.getElementById(panelId);
+  const body = document.getElementById(bodyId);
+  if (!panel || !body) return;
+  if (!html) {
+    panel.hidden = true;
+    body.innerHTML = "";
+    return;
+  }
+  panel.hidden = false;
+  body.innerHTML = html;
+}
+
+function renderStory(incident) {
+  const { hits, impacts, runbook } = storyFrom(incident.events);
+  fillPanel(
+    "recallPanel",
+    "recallBody",
+    hits
+      .map(
+        (hit) => `<article class="event">
+          <div class="event-head"><span class="event-kind">${esc(hit.band || "match")}</span><span>${esc(hit.source || "")}</span></div>
+          <p><strong>${esc(hit.title || "Untitled")}</strong></p>
+          <p>${esc(hit.why)}</p>
+        </article>`
+      )
+      .join("")
+  );
+  fillPanel(
+    "impactPanel",
+    "impactBody",
+    impacts
+      .map((impact) => {
+        const usd = typeof impact.estimated_usd === "number" ? `$${impact.estimated_usd}/month` : "n/a";
+        const verdict = impact.hold ? impact.why_hold || "Waits for approval." : "Clear to apply.";
+        return `<article class="event">
+          <div class="event-head"><span class="event-kind">${esc(impact.cmd)}</span><span>${esc(impact.scope || "")}</span><span>${esc(usd)}</span><span>${esc(impact.risk || "")} risk</span></div>
+          <p>${esc(impact.targets || "")}</p>
+          <p class="muted">${esc(verdict)}</p>
+        </article>`;
+      })
+      .join("")
+  );
+  if (!runbook) {
+    fillPanel("runbookPanel", "runbookBody", "");
+    return;
+  }
+  const steps = (runbook.steps || [])
+    .map((step) => {
+      const mark = step.status === "applied" ? "Applied" : "Held";
+      return `<li><strong>${esc(mark)}.</strong> ${esc(step.do || step.cmd || "")}</li>`;
+    })
+    .join("");
+  const checks = (runbook.checks || []).map(esc).join(" ");
+  const undo = (runbook.rollback || []).map(esc).join(" ");
+  fillPanel(
+    "runbookPanel",
+    "runbookBody",
+    `<p><strong>${esc(runbook.title)}</strong></p><ol>${steps}</ol>` +
+      (checks ? `<p class="muted">Check: ${checks}</p>` : "") +
+      (undo ? `<p class="muted">Undo: ${undo}</p>` : "")
+  );
 }
 
 function renderEvents(container, events) {
@@ -118,12 +238,16 @@ function renderEvents(container, events) {
 
 window.SentinelUI = {
   DEMO_SIGNAL,
+  HOT_RANGE_SIGNAL,
   esc,
   toast,
   shortId,
   fmtTs,
   api,
   fireDemoAlert,
+  fireHotRangeAlert,
   pendingApproval,
+  pendingGate,
   renderEvents,
+  renderStory,
 };

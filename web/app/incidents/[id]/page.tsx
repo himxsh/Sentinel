@@ -10,7 +10,7 @@ export default async function IncidentPage({
   return (
     <div className="shell shell-narrow">
       <Header current="incidents" />
-      <IncidentDetail id={id} />
+      <IncidentDetail key={id} id={id} />
     </div>
   );
 }

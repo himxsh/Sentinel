@@ -27,6 +27,7 @@
       <p class="hero-line">The on-call agent that never forgets — incident state, audit trail, and semantic memory in one CockroachDB cluster.</p>
       <div class="cta-row">
         <button type="button" class="btn btn-signal" id="fireBtn">Fire demo alert</button>
+        <button type="button" class="btn btn-ghost" id="hotBtn">Fire hot-range alert</button>
         <a class="btn btn-ghost" href="/incidents">Open incident feed</a>
       </div>
     </main>
@@ -35,6 +36,9 @@
   <script>
     document.getElementById("fireBtn").addEventListener("click", function () {
       SentinelUI.fireDemoAlert(this);
+    });
+    document.getElementById("hotBtn").addEventListener("click", function () {
+      SentinelUI.fireHotRangeAlert(this);
     });
   </script>
 </body>

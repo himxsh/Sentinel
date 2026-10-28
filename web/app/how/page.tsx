@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FireAlertButton } from "@/components/FireAlertButton";
 import { Header } from "@/components/Header";
 import { CASE_PAGE_SHOWS, HOW_NIGHT } from "@/lib/copy";
+import { HOT_RANGE_SIGNAL } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -64,7 +65,13 @@ export default function HowPage() {
           The demo alert is a runaway query. You will get a real case, not a slide.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
-          <FireAlertButton />
+          <FireAlertButton id="fire-demo" />
+          <FireAlertButton
+            id="fire-hot-range"
+            signal={HOT_RANGE_SIGNAL}
+            label="Fire a hot-range alert"
+            className="btn btn-ghost"
+          />
           <Link className="btn btn-ghost" href="/incidents">
             Cases
           </Link>

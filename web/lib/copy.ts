@@ -65,11 +65,11 @@ export const HOW_NIGHT = [
   },
   {
     title: "Decide",
-    body: "It writes a guess and a plan. Safe steps can run. Destructive steps sit on the case until you approve.",
+    body: "It writes a guess and a plan. A wide blast radius or a real bill waits for you, even when the step is not marked destructive. You see the estimate before anything changes.",
   },
   {
     title: "File",
-    body: "When the loop finishes, a write-up is stored as knowledge. The next P1 does not meet a blank agent.",
+    body: "When the loop finishes, it stores a write-up and a runbook built from the steps it ran and the steps it held.",
   },
 ];
 
@@ -85,5 +85,17 @@ export const CASE_PAGE_SHOWS = [
   {
     title: "Audit timeline",
     body: "Plain labels on each event, with the raw note tucked under a disclosure if you want the detail.",
+  },
+  {
+    title: "Replay",
+    body: "Play the night one beat at a time. The timeline highlights the beat you are on.",
+  },
+  {
+    title: "Why these cases",
+    body: "Each recalled lesson says which words it shares with the alert, and how close the vector was.",
+  },
+  {
+    title: "Blast radius",
+    body: "Before a change runs, Sentinel prices it. Cluster-wide steps wait for you.",
   },
 ];
